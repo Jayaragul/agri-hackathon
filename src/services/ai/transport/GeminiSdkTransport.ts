@@ -23,6 +23,7 @@ import { GoogleGenAI } from "@google/genai";
 
 import { AiHarnessError, classifyError } from "../contracts/aiTypes";
 import type {
+  AiFunctionCall,
   AiTransport,
   GenerateOptions,
   PromptPayload,
@@ -34,6 +35,7 @@ import type { HarnessConfig } from "../runtime/harnessConfig";
 interface GenAiPart {
   text?: string;
   inlineData?: { data: string; mimeType: string };
+  functionCall?: { name: string; args?: Record<string, unknown> };
 }
 
 interface GenAiContent {
@@ -186,6 +188,21 @@ function extractGroundingUrls(response: GenAiResponse): string[] | undefined {
     }
   }
   return urls.length > 0 ? urls : undefined;
+}
+
+/** Collect any `functionCall` parts off the first candidate — absent unless `tools` was set. */
+function extractFunctionCalls(response: GenAiResponse): AiFunctionCall[] | undefined {
+  const parts = response.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return undefined;
+
+  const calls: AiFunctionCall[] = [];
+  for (const part of parts) {
+    const call = part?.functionCall;
+    if (call && typeof call.name === "string" && call.name.length > 0) {
+      calls.push({ name: call.name, args: call.args ?? {} });
+    }
+  }
+  return calls.length > 0 ? calls : undefined;
 }
 
 /**
@@ -382,10 +399,21 @@ export class GeminiSdkTransport implements AiTransport {
       config.maxOutputTokens = opts.maxOutputTokens;
     }
 
-    // MUTUALLY EXCLUSIVE: googleSearch grounding cannot coexist with JSON response mode.
-    // Grounded tasks therefore return prose and are parsed defensively upstream.
+    // MUTUALLY EXCLUSIVE: googleSearch grounding, developer-defined tools, and JSON response
+    // mode cannot coexist on the same call — a tool-declaring call always returns prose or a
+    // function call, never schema-shaped JSON.
     if (payload.useSearchGrounding === true) {
       config.tools = [{ googleSearch: {} }];
+    } else if (Array.isArray(payload.tools) && payload.tools.length > 0) {
+      config.tools = [
+        {
+          functionDeclarations: payload.tools.map((tool) => ({
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.parameters,
+          })),
+        },
+      ];
     } else if (opts.responseSchema !== undefined && opts.responseSchema !== null) {
       config.responseMimeType = "application/json";
       config.responseSchema = opts.responseSchema;
@@ -398,7 +426,8 @@ export class GeminiSdkTransport implements AiTransport {
     });
 
     const text = readResponseText(response);
-    if (text.trim().length === 0) {
+    const functionCalls = extractFunctionCalls(response);
+    if (text.trim().length === 0 && !functionCalls) {
       const finishReason = response.candidates?.[0]?.finishReason;
       throw new AiHarnessError(
         `Gemini returned an empty response from ${modelId}${
@@ -409,8 +438,9 @@ export class GeminiSdkTransport implements AiTransport {
     }
 
     const groundingUrls = extractGroundingUrls(response);
-    return groundingUrls
-      ? { text, modelId, groundingUrls }
-      : { text, modelId };
+    const result: TransportResult = { text, modelId };
+    if (groundingUrls) result.groundingUrls = groundingUrls;
+    if (functionCalls) result.functionCalls = functionCalls;
+    return result;
   }
 }

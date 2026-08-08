@@ -186,7 +186,9 @@ export type AppStage =
   | 'action-plan'
   | 'calendar'
   | 'digital-twin'
-  | 'advisor';
+  | 'advisor'
+  | 'crop-doctor'
+  | 'audio-mode';
 
 export interface ExplanationProvider {
   explainRecommendation(
@@ -209,9 +211,59 @@ export interface SoilReportExtractor {
   extract(file: File): Promise<Partial<FarmProfile>>;
 }
 
+/**
+ * `proactive`: the deterministic engine predicted this ahead of time (a calendar milestone, a
+ * pest-risk window opening) — never AI-invented. `reactive`: something the farmer or an agent
+ * observed as it happened, which no calendar could have predicted. See [[krishi-mitra-ai-boundary]].
+ */
+export type FarmEventMode = 'proactive' | 'reactive';
+
+export type FarmEventKind = 'observation' | 'action' | 'alert' | 'milestone' | 'lab-report';
+
+/** Who reported this event — never "engine" for a `reactive` event, never "farmer" for a `proactive` one. */
+export type FarmEventSource = 'farmer' | 'engine' | 'agent';
+
+/**
+ * One entry in the farm's shared timeline — the "calendar that stores everything" read by
+ * every agent through `services/context/farmContext.ts`, so a pest observed in Crop Doctor or a
+ * situation mentioned in Audio Mode is visible to the General Farm Advisor too, and vice versa.
+ * Proactive entries are computed fresh from `engine/proactiveEngine.ts` (never persisted, since
+ * "today" moves); reactive entries are persisted via `services/timeline/farmTimeline.ts`.
+ */
+export interface FarmTimelineEvent {
+  id: string;
+  createdAtIso: string;
+  mode: FarmEventMode;
+  kind: FarmEventKind;
+  source: FarmEventSource;
+  title: string;
+  detail: string;
+  cropId?: string | null;
+  /** Ties back to `CalendarDay.dayIndex` when this event is anchored to a specific cultivation day. */
+  dayIndex?: number | null;
+}
+
 export interface TranslationProvider {
   translate(
     text: string,
     targetLanguage: "en" | "ta"
   ): Promise<string>;
+}
+
+/**
+ * One day of Google Weather API forecast, already mapped down to what this app uses — see
+ * `server/src/services/weatherProxy.ts` for the raw-to-clean mapping. Every numeric field is
+ * nullable because "not reported for this day" must be representable rather than defaulted to 0,
+ * which would read as a real (and wrong) measurement to `engine/weatherRules.ts`.
+ */
+export interface WeatherForecastDay {
+  dateIso: string;
+  minTempC: number | null;
+  maxTempC: number | null;
+  rainProbabilityPercent: number | null;
+  rainQpfMm: number | null;
+  windSpeedKph: number | null;
+  humidityPercent: number | null;
+  thunderstormProbabilityPercent: number | null;
+  conditionType: string | null;
 }

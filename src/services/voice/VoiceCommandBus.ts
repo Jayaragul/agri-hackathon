@@ -30,6 +30,8 @@ const STAGE_KEYWORDS: StageKeyword[] = [
   { stage: "action-plan", label: "action plan", keywords: ["action plan", "final plan"] },
   { stage: "digital-twin", label: "digital twin", keywords: ["digital twin", "field monitor", "my field", "growth stage"] },
   { stage: "advisor", label: "farm advisor", keywords: ["advisor", "ask a question", "farm advisor"] },
+  { stage: "crop-doctor", label: "crop doctor", keywords: ["crop doctor", "live visit", "video call", "check my crop"] },
+  { stage: "audio-mode", label: "audio mode", keywords: ["audio mode", "voice mode", "talk to advisor"] },
 ];
 
 export function parseVoiceIntent(rawTranscript: string): VoiceIntent {
@@ -77,11 +79,20 @@ export function executeVoiceIntent(intent: VoiceIntent, ctx: VoiceCommandContext
       return "Loaded the demo farm profile. Here are your crop recommendations.";
 
     case "go_to_stage": {
-      const needsProfile = intent.stage !== "farm-profile" && intent.stage !== "digital-twin" && intent.stage !== "advisor";
+      const needsProfile =
+        intent.stage !== "farm-profile" &&
+        intent.stage !== "digital-twin" &&
+        intent.stage !== "advisor" &&
+        intent.stage !== "audio-mode";
       if (needsProfile && !ctx.profile) {
         return "Please fill in your farm profile first, or say 'load demo' to try a sample farm.";
       }
-      const needsCrop = intent.stage === "soil-corrections" || intent.stage === "financials" || intent.stage === "pests" || intent.stage === "action-plan";
+      const needsCrop =
+        intent.stage === "soil-corrections" ||
+        intent.stage === "financials" ||
+        intent.stage === "pests" ||
+        intent.stage === "action-plan" ||
+        intent.stage === "crop-doctor";
       if (needsCrop && !ctx.selectedCrop) {
         return "Please choose a crop from your recommendations first.";
       }

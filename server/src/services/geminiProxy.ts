@@ -18,11 +18,26 @@ export interface ProxyImage {
   base64Data: string;
 }
 
+/** Mirrors `src/services/ai/contracts/aiTypes.ts`'s `AiToolDeclaration`/`AiFunctionCall` — this
+ * server has no dependency on the frontend source tree, so the shapes are duplicated rather
+ * than imported. */
+export interface ProxyToolDeclaration {
+  name: string;
+  description: string;
+  parameters?: unknown;
+}
+
+export interface ProxyFunctionCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+
 export interface GenerateRequest {
   system?: string;
   user: string;
   images?: ProxyImage[];
   useSearchGrounding?: boolean;
+  tools?: ProxyToolDeclaration[];
   modelChain: string[];
   temperature?: number;
   maxOutputTokens?: number;
@@ -34,6 +49,7 @@ export interface GenerateReply {
   text: string;
   modelId: string;
   groundingUrls?: string[];
+  functionCalls?: ProxyFunctionCall[];
 }
 
 export class ProxyError extends Error {
@@ -49,6 +65,7 @@ export class ProxyError extends Error {
 interface RestPart {
   text?: string;
   inlineData?: { data: string; mimeType: string };
+  functionCall?: { name: string; args?: Record<string, unknown> };
 }
 
 interface RestCandidate {
@@ -90,6 +107,20 @@ function readResponseText(body: RestResponseBody): string {
   return parts.map((p) => (typeof p.text === "string" ? p.text : "")).join("");
 }
 
+function extractFunctionCalls(body: RestResponseBody): ProxyFunctionCall[] | undefined {
+  const parts = body.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return undefined;
+
+  const calls: ProxyFunctionCall[] = [];
+  for (const part of parts) {
+    const call = part?.functionCall;
+    if (call && typeof call.name === "string" && call.name.length > 0) {
+      calls.push({ name: call.name, args: call.args ?? {} });
+    }
+  }
+  return calls.length > 0 ? calls : undefined;
+}
+
 async function callModel(
   apiKey: string,
   modelId: string,
@@ -108,6 +139,16 @@ async function callModel(
 
   if (request.useSearchGrounding) {
     body.tools = [{ googleSearch: {} }];
+  } else if (Array.isArray(request.tools) && request.tools.length > 0) {
+    body.tools = [
+      {
+        functionDeclarations: request.tools.map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.parameters,
+        })),
+      },
+    ];
   } else if (request.responseSchema !== undefined && request.responseSchema !== null) {
     generationConfig.responseMimeType = "application/json";
     generationConfig.responseSchema = request.responseSchema;
@@ -136,12 +177,17 @@ async function callModel(
   }
 
   const text = readResponseText(payload);
-  if (text.trim().length === 0) {
+  const functionCalls = extractFunctionCalls(payload);
+  if (text.trim().length === 0 && !functionCalls) {
     const reason = payload.candidates?.[0]?.finishReason ?? payload.promptFeedback?.blockReason;
     throw new ProxyError(502, `Gemini ${modelId} returned an empty response${reason ? ` (${reason})` : ""}.`);
   }
 
-  return { text, modelId, groundingUrls: extractGroundingUrls(payload) };
+  const groundingUrls = extractGroundingUrls(payload);
+  const reply: GenerateReply = { text, modelId };
+  if (groundingUrls) reply.groundingUrls = groundingUrls;
+  if (functionCalls) reply.functionCalls = functionCalls;
+  return reply;
 }
 
 /**

@@ -93,6 +93,36 @@ describe("generateViaGemini", () => {
     expect(reply.groundingUrls).toEqual(["https://example.com"]);
   });
 
+  it("sends functionDeclarations when tools are supplied, and parses a functionCall response", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ functionCall: { name: "get_weather_alerts", args: { region: "Coimbatore" } } }] } } ],
+      }),
+      text: async () => "",
+    })) as unknown as typeof fetch;
+
+    const reply = await generateViaGemini(
+      "server-secret",
+      {
+        user: "will it rain?",
+        modelChain: ["gemini-3.6-flash"],
+        tools: [{ name: "get_weather_alerts", description: "check weather", parameters: { type: "object" } }],
+      },
+      fetchMock
+    );
+
+    expect(reply.functionCalls).toEqual([{ name: "get_weather_alerts", args: { region: "Coimbatore" } }]);
+
+    const [, init] = vi.mocked(fetchMock).mock.calls[0];
+    const body = JSON.parse((init as RequestInit).body as string);
+    expect(body.tools).toEqual([
+      { functionDeclarations: [{ name: "get_weather_alerts", description: "check weather", parameters: { type: "object" } }] },
+    ]);
+    expect(body.generationConfig?.responseSchema).toBeUndefined();
+  });
+
   it("uses a typed ProxyError", () => {
     expect(new ProxyError(400, "bad request")).toMatchObject({ status: 400, message: "bad request" });
   });

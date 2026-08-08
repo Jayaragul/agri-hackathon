@@ -1,15 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import gsap from 'gsap'
-import { CalendarDays, Loader2, MessageCircleQuestion, Sparkles } from 'lucide-react'
+import { Bell, CalendarDays, ClipboardList, History, Loader2, MessageCircleQuestion, Plus, Sparkles } from 'lucide-react'
 import { useFarmStore } from '../../state/farmStore'
-import { analyzeSoilGaps } from '../../engine/soilGapAnalysis'
-import { buildCropCalendar, parseIsoDate, type CalendarDay, type CropCalendarPhase } from '../../engine/cropCalendarEngine'
-import { sampleCorrections } from '../../data/sample/corrections'
-import { samplePests } from '../../data/sample/pests'
+import { parseIsoDate, type CalendarDay, type CropCalendarPhase } from '../../engine/cropCalendarEngine'
+import { deriveCurrentCropCalendarPlan } from '../../engine/currentCropCalendar'
+import { buildProactiveAlerts, describeProactiveAlert } from '../../engine/proactiveEngine'
 import { getA2AOrchestrator } from '../../services/ai/a2a'
 import type { AiSourceKind, CalendarAnswer } from '../../services/ai'
 import { getSessionStorage } from '../../services/storage'
 import type { CalendarChatMessage } from '../../services/storage'
+import { recallMemories, recordMemory } from '../../services/memory/memoryClient'
+import { getWeatherProactiveAlerts } from '../../services/weather/weatherContext'
+import type { FarmTimelineEvent } from '../../domain/models/models'
 
 /**
  * Day-by-day cultivation calendar, generated once profile + crop + soil corrections + pest
@@ -64,12 +66,13 @@ function groupByMonth(days: CalendarDay[]): MonthGroup[] {
 }
 
 const CropCalendar: React.FC = () => {
-  const { profile, selectedCrop, recommendations, setStage } = useFarmStore()
+  const { profile, selectedCrop, recommendations, setStage, timelineEvents, logTimelineEvent } = useFarmStore()
   const [selectedDateIso, setSelectedDateIso] = useState<string | null>(null)
   const [question, setQuestion] = useState('')
   const [asking, setAsking] = useState(false)
   const [messages, setMessages] = useState<CalendarChatMessage[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [journalNote, setJournalNote] = useState('')
   const gridRef = useRef<HTMLDivElement>(null)
   const detailRef = useRef<HTMLDivElement>(null)
 
@@ -77,10 +80,28 @@ const CropCalendar: React.FC = () => {
     if (!profile || !selectedCrop) return null
     const rec = recommendations.find((r) => r.crop.id === selectedCrop.id)
     if (!rec) return null
-    const gapAnalysis = analyzeSoilGaps(profile, selectedCrop, sampleCorrections, rec)
-    const pestRisks = samplePests.filter((p) => p.cropId === selectedCrop.id)
-    return buildCropCalendar({ profile, crop: selectedCrop, recommendation: rec, gapAnalysis, pestRisks })
+    return deriveCurrentCropCalendarPlan(profile, selectedCrop, rec)
   }, [profile, selectedCrop, recommendations])
+
+  // Proactive: the same deterministic plan this screen renders, read 7 days forward from today —
+  // see `engine/proactiveEngine.ts`. Recomputed on every render (cheap, pure) rather than cached,
+  // since "today" changes underneath it.
+  const calendarAlerts = useMemo(() => (plan ? buildProactiveAlerts(plan, new Date()) : []), [plan])
+
+  // Weather is a live network fetch, so unlike `calendarAlerts` it can't be a plain useMemo —
+  // see `services/weather/weatherContext.ts`. Resolves to `[]` with no region configured.
+  const [weatherAlerts, setWeatherAlerts] = useState<FarmTimelineEvent[]>([])
+  useEffect(() => {
+    let cancelled = false
+    getWeatherProactiveAlerts(profile?.region).then((alerts) => {
+      if (!cancelled) setWeatherAlerts(alerts)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [profile?.region])
+
+  const upcomingAlerts = useMemo(() => [...calendarAlerts, ...weatherAlerts], [calendarAlerts, weatherAlerts])
 
   const months = useMemo(() => (plan ? groupByMonth(plan.days) : []), [plan])
   const selectedDay = useMemo(
@@ -129,12 +150,15 @@ const CropCalendar: React.FC = () => {
     const storage = getSessionStorage()
     const afterFarmer = await storage.appendCalendarMessage(selectedDay.dateIso, { role: 'farmer', text: questionText })
     setMessages(afterFarmer)
+    void recordMemory('farmer', questionText)
 
     try {
+      const memories = await recallMemories(questionText)
       const outcome = await getA2AOrchestrator().dispatch<CalendarAnswer>('answer-calendar-question', {
         crop: selectedCrop,
         day: selectedDay,
         question: questionText,
+        memories,
       })
       const afterAssistant = await storage.appendCalendarMessage(selectedDay.dateIso, {
         role: 'assistant',
@@ -143,6 +167,7 @@ const CropCalendar: React.FC = () => {
         source: outcome.source,
       })
       setMessages(afterAssistant)
+      void recordMemory('assistant', outcome.data.answer)
     } catch {
       const afterAssistant = await storage.appendCalendarMessage(selectedDay.dateIso, {
         role: 'assistant',
@@ -153,6 +178,21 @@ const CropCalendar: React.FC = () => {
     } finally {
       setAsking(false)
     }
+  }
+
+  const handleAddJournalNote = () => {
+    const text = journalNote.trim()
+    if (!text) return
+    logTimelineEvent({
+      mode: 'reactive',
+      kind: 'observation',
+      source: 'farmer',
+      title: text.length > 80 ? `${text.slice(0, 77)}...` : text,
+      detail: text,
+      cropId: selectedCrop?.id ?? null,
+      dayIndex: selectedDay?.dayIndex ?? null,
+    })
+    setJournalNote('')
   }
 
   if (!profile || !selectedCrop || !plan) {
@@ -182,6 +222,91 @@ const CropCalendar: React.FC = () => {
             {phase.replace('-', ' ')}
           </span>
         ))}
+      </div>
+
+      <div className="card" style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <ClipboardList size={20} color="var(--accent)" />
+          <h3 style={{ margin: 0, fontSize: '18px' }}>Farm Journal</h3>
+        </div>
+
+        <div className="grid-2" style={{ gap: '20px', marginBottom: '20px' }}>
+          <div>
+            <strong
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                color: 'var(--muted-foreground)',
+                marginBottom: '10px',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+              }}
+            >
+              <Bell size={14} /> Upcoming · predicted
+            </strong>
+            {upcomingAlerts.length === 0 ? (
+              <p style={{ fontSize: '14px', color: 'var(--muted-foreground)', margin: 0 }}>Nothing flagged in the next 7 days.</p>
+            ) : (
+              <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {upcomingAlerts.slice(0, 5).map((a) => (
+                  <li key={a.id}>{describeProactiveAlert(a)}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <strong
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                color: 'var(--muted-foreground)',
+                marginBottom: '10px',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+              }}
+            >
+              <History size={14} /> Recent activity
+            </strong>
+            {timelineEvents.length === 0 ? (
+              <p style={{ fontSize: '14px', color: 'var(--muted-foreground)', margin: 0 }}>
+                Nothing logged yet — talk to Krishi Mitra in Audio Mode, or add a note below.
+              </p>
+            ) : (
+              <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {timelineEvents.slice(0, 5).map((e) => (
+                  <li key={e.id}>{e.title}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '16px', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            className="form-control"
+            style={{ flex: 1, minWidth: '200px' }}
+            placeholder="Log something — e.g. sprayed neem oil today"
+            value={journalNote}
+            onChange={(e) => setJournalNote(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddJournalNote()}
+            maxLength={200}
+          />
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ width: 'auto' }}
+            disabled={journalNote.trim().length === 0}
+            onClick={handleAddJournalNote}
+          >
+            <Plus size={16} /> Log
+          </button>
+        </div>
       </div>
 
       <div ref={gridRef} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>

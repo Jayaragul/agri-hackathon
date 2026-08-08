@@ -83,7 +83,7 @@ function addDays(base: Date, days: number): Date {
  * midnight is still the previous day in UTC, so that would silently shift every date back by
  * one day for exactly the audience this app targets.
  */
-function toIsoDate(date: Date): string {
+export function toIsoDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");

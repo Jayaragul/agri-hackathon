@@ -14,6 +14,7 @@
 
 import { AiHarnessError, classifyError } from "../contracts/aiTypes";
 import type {
+  AiFunctionCall,
   AiTransport,
   GenerateOptions,
   PromptPayload,
@@ -29,6 +30,7 @@ const MAX_ERROR_BODY_CHARS = 300;
 interface RestPart {
   text?: string;
   inlineData?: { data: string; mimeType: string };
+  functionCall?: { name: string; args?: Record<string, unknown> };
 }
 
 interface RestGenerationConfig {
@@ -157,6 +159,21 @@ function readResponseText(body: RestResponseBody): string {
     if (part && typeof part.text === "string") assembled += part.text;
   }
   return assembled;
+}
+
+/** Collect any `functionCall` parts off the first candidate — absent unless `tools` was sent. */
+function extractFunctionCalls(body: RestResponseBody): AiFunctionCall[] | undefined {
+  const parts = body.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return undefined;
+
+  const calls: AiFunctionCall[] = [];
+  for (const part of parts) {
+    const call = part?.functionCall;
+    if (call && typeof call.name === "string" && call.name.length > 0) {
+      calls.push({ name: call.name, args: call.args ?? {} });
+    }
+  }
+  return calls.length > 0 ? calls : undefined;
 }
 
 function buildParts(payload: PromptPayload): RestPart[] {
@@ -316,9 +333,20 @@ export class GeminiRestTransport implements AiTransport {
       generationConfig.maxOutputTokens = opts.maxOutputTokens;
     }
 
-    // NEVER both: JSON mode and googleSearch grounding are mutually exclusive server-side.
+    // NEVER more than one: JSON mode, googleSearch grounding, and developer-defined tools are
+    // all mutually exclusive server-side.
     if (payload.useSearchGrounding === true) {
       body.tools = [{ googleSearch: {} }];
+    } else if (Array.isArray(payload.tools) && payload.tools.length > 0) {
+      body.tools = [
+        {
+          functionDeclarations: payload.tools.map((tool) => ({
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.parameters,
+          })),
+        },
+      ];
     } else if (opts.responseSchema !== undefined && opts.responseSchema !== null) {
       generationConfig.responseMimeType = "application/json";
       generationConfig.responseSchema = opts.responseSchema;
@@ -391,7 +419,8 @@ export class GeminiRestTransport implements AiTransport {
     }
 
     const text = readResponseText(body);
-    if (text.trim().length === 0) {
+    const functionCalls = extractFunctionCalls(body);
+    if (text.trim().length === 0 && !functionCalls) {
       const finishReason = body.candidates?.[0]?.finishReason;
       const blockReason = body.promptFeedback?.blockReason;
       const reason = finishReason ?? blockReason;
@@ -403,8 +432,9 @@ export class GeminiRestTransport implements AiTransport {
     }
 
     const groundingUrls = extractGroundingUrls(body);
-    return groundingUrls
-      ? { text, modelId, groundingUrls }
-      : { text, modelId };
+    const result: TransportResult = { text, modelId };
+    if (groundingUrls) result.groundingUrls = groundingUrls;
+    if (functionCalls) result.functionCalls = functionCalls;
+    return result;
   }
 }

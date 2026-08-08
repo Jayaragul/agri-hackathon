@@ -32,13 +32,20 @@ component reaching into a different agent directly.
 | [Market Intelligence](#market-intelligence-agent) | Perceives | `gemini-3.6-flash` | `market-price` | Live |
 | [Calendar Query](#calendar-query-agent) | Explains | `gemini-3.6-flash` | `answer-calendar-question` | Live |
 | [General Farm Advisor](#general-farm-advisor-agent) | Explains | `gemini-3.6-flash` | `answer-farm-question` | Live |
+| [Crop Doctor (Live)](#crop-doctor-live-agent) | Perceives (constrained), live video+audio | `gemini-2.5-flash-native-audio-preview` | `reportPestObservation` (client-resolved tool) | Live — needs `GEMINI_API_KEY` on the server |
+| [Audio Mode](#audio-mode--onboarding) | Explains (reuses General Farm Advisor's skill) | Sarvam AI (`saaras:v3` STT, `bulbul:v3` TTS) + `gemini-3.6-flash` | speech turns over `answer-farm-question` | Live — needs `SARVAM_API_KEY` on the server |
 | [Cultivation Calendar Engine](#cultivation-calendar-engine) | **Decides** (deterministic, not an AI agent) | — | day-by-day plan generation | Live |
+| [Farm Timeline — Proactive & Reactive](#farm-timeline--proactive--reactive-shared-context) | **Decides** (proactive, deterministic) **/ records** (reactive) — not an AI agent | — | forward-looking alerts + a shared farm event log | Live |
+| [Weather-based Proactive Alerts](#weather-based-proactive-alerts) | **Decides** (deterministic thresholds) — not an AI agent | — | rain/wind/heat/storm warnings from Google Weather API | Live — needs `GOOGLE_WEATHER_API_KEY` on the server |
 | [Digital Twin Simulation Engine](#digital-twin-simulation-engine) | **Decides** (deterministic, not an AI agent) | — | field growth/health simulation | Live |
 | [Voice Interaction Agent](#voice-interaction-agent) | Explains (reads results back), routes commands | Browser Web Speech API | `listen`, `speak`, command routing | Live (default impl) · pluggable |
+| [Long-term Memory](#long-term-memory-mem0) | Supporting layer, not itself an agent | mem0 (hosted) | `record`, `recall` | Optional — needs `MEM0_API_KEY` |
 
-Every "Live" agent above runs with **no API key required** — `AiHarness` guarantees a
-deterministic, schema-shaped fallback for every task, so the app is feature-complete offline.
-An API key upgrades answers from `local` to `gemini` source; it never unlocks new capability.
+Every "Live" agent above except Crop Doctor runs with **no API key required** — `AiHarness`
+guarantees a deterministic, schema-shaped fallback for every task, so the app is
+feature-complete offline. An API key upgrades answers from `local` to `gemini` source; it never
+unlocks new capability. Crop Doctor is the one exception: a live video call has no offline
+equivalent, so it requires a configured backend (see its section below).
 
 ---
 
@@ -119,7 +126,7 @@ An API key upgrades answers from `local` to `gemini` source; it never unlocks ne
 - **A2A card id**: `calendar-query`
 
 ### Skill: `answer-calendar-question`
-- **Input**: `{ crop: Crop, day: CalendarDay, question: string }`
+- **Input**: `{ crop: Crop, day: CalendarDay, question: string, memories?: string[] }`
 - **Output** (`CalendarAnswerSchema`): `{ answer, citedFacts[] }`
 - **Task**: `createAnswerCalendarQuestionTask()` — `src/services/ai/tasks/answerCalendarQuestionTask.ts`
 - **Fallback**: cannot address the literal free-text question (that needs the model), so it degrades honestly — it reads back exactly what the engine already knows about that day, rather than pretending to answer something it can't.
@@ -139,11 +146,68 @@ An API key upgrades answers from `local` to `gemini` source; it never unlocks ne
 - **Provenance**: the feature concept and the server-side-key security pattern below were adapted from a sibling hackathon project, "Thulir" (`Build-with-AI-Code-for-Communities/hunger-team-012-code-sastra`), which forked from the same shared starter template as this project. The implementation here is native to this codebase's `AiHarness`/A2A/testing conventions, not a copy-paste.
 
 ### Skill: `answer-farm-question`
-- **Input**: `{ question: string, profile: FarmProfile | null, crop: Crop | null, topRecommendation: RecommendationResult | null }`
+- **Input**: `{ question: string, profile: FarmProfile | null, crop: Crop | null, topRecommendation: RecommendationResult | null, memories?: string[], farmerName?: string | null, declaredSituation?: string | null, recentEvents?: string[], upcomingAlerts?: string[] }` — the last two come from the [Farm Timeline](#farm-timeline--proactive--reactive-shared-context) via `farmContext.ts`.
 - **Output** (`FarmAdvisorAnswerSchema`): `{ answer, topics[], confidence }`
 - **Task**: `createAnswerFarmQuestionTask()` — `src/services/ai/tasks/answerFarmQuestionTask.ts`
-- **Fallback**: `buildLocalFarmAnswer()` — the same knowledge-base-grounded, always-available answer the app gives with zero API key. A live call only ever upgrades wording/personalisation, never unlocks the feature.
+- **Fallback**: `buildLocalFarmAnswer()` — the same knowledge-base-grounded, always-available answer the app gives with zero API key. A live call only ever upgrades wording/personalisation, never unlocks the feature. The fallback ignores `memories`, `recentEvents`, and `upcomingAlerts` entirely — it only ever uses `profile`/`crop`/`topRecommendation`, the same deterministic inputs it has always used.
 - **Tools**: none.
+
+---
+
+## Crop Doctor (Live) Agent
+
+- **Location**: `src/services/ai/live/` (frontend) + `server/src/services/liveTokenService.ts` + `server/src/services/cropDoctorConfig.ts` (backend) + `src/features/crop-doctor/CropDoctor.tsx` (UI)
+- **What it is**: a live video-and-voice call — the farmer points their camera at a crop and talks naturally; Crop Doctor watches, listens, and speaks back with native audio. Built on the [Gemini Live API](https://ai.google.dev/gemini-api/docs/live-api) (bidirectional WebSocket streaming), not the request/response `AiHarness` path every other agent uses — a live call has no meaningful "cache" or "single retry" concept.
+- **Boundary**: **Perceives, under the same closed-set constraint as [Pest Diagnostician](#pest-diagnostician-agent) — video is a faster perception channel into the identical pipeline, not a new, less-constrained one.** The model may only match against the crop's own verified pest list, and it may never state a treatment itself; treatment text always comes from `sample/pests.ts`, resolved client-side.
+- **Security — no client-exposed key**: the browser never sees `GEMINI_API_KEY`. `POST /api/live/token` (`server/src/routes/liveRoutes.ts`) mints a short-lived, single-use [ephemeral token](https://ai.google.dev/gemini-api/docs/live-api/ephemeral-tokens) server-side, with the Crop Doctor system instruction and tool declaration **locked into the token itself** (`liveConnectConstraints`) — the farmer's browser cannot override the persona or the tool contract even if it tried. The browser then connects DIRECTLY to Google's Live API using that token; this server never relays the audio/video stream itself.
+- **The tool loop** (`reportPestObservation`):
+  1. At token-mint time, the server embeds the crop's verified candidate pest list (names + symptoms only, never treatment text) into the system instruction (`buildCropDoctorSystemInstruction` in `cropDoctorConfig.ts`).
+  2. During the call, whenever the model notices something worth checking, it calls `reportPestObservation({ observedSymptoms, matchedKnownPestId, confidence })`.
+  3. The frontend's `pestToolResolver.ts` — the safety-critical piece, unit tested in isolation — rejects any id not in the candidate list (exactly like `PestIdentificationService.enforceClosedSet`), and on a real match returns the verified `biologicalControl` / `chemicalControl` / `economicThreshold` from the dataset.
+  4. That result is sent back via `session.sendToolResponse()`; the model relays it in its own words over native audio. It never receives treatment text except through this resolved response.
+- **Session management**: `CropDoctorSession` (`src/services/ai/live/CropDoctorSession.ts`) owns camera/mic capture (canvas-snapshot JPEG frames at ~1.5s intervals, mic downsampled to 16kHz PCM16 via `audioUtils.ts`), playback of the model's 24kHz PCM audio output, and live transcript events (`inputAudioTranscription` / `outputAudioTranscription`).
+- **UI**: `src/features/crop-doctor/CropDoctor.tsx`, reachable from the "Crop Doctor" header button. Requires a crop already selected (uses that crop's verified pest list as the closed set) — shown a guard message otherwise, same pattern as the Cultivation Calendar.
+- **No offline fallback, by design**: unlike every other agent, there is no deterministic local answer for "watch this live video" — the feature requires a deployed backend with `GEMINI_API_KEY` set. With no backend, the "Start Live Visit" button surfaces a clear error rather than pretending to work.
+- **Tests**: `src/tests/cropDoctorLive.test.ts` (tool resolution + PCM/base64 audio conversion, both pure and fully unit tested), `server/src/services/liveTokenService.test.ts` (system-instruction construction + missing-key error path). The live WebSocket connection itself, and real camera/microphone capture, cannot be exercised in an automated/headless environment and were verified structurally (typecheck, error-path behavior in a real browser with camera access denied) rather than end-to-end against Google's servers.
+- **Farmer context — the full shared snapshot, not just a name**: `createLiveToken()` accepts an optional `farmerContext: { farmerName?, situation?, soilSummary?, recentEvents?, upcomingAlerts? }`, folded into the system instruction (`buildCropDoctorSystemInstruction`'s `formatFarmerContext`) so Video Mode knows the same soil numbers, recent farm events, and upcoming calendar predictions every other agent does — not just a name and a one-line situation. Assembled by `services/context/farmContext.ts` — see [Farm Timeline](#farm-timeline--proactive--reactive-shared-context) for where `recentEvents`/`upcomingAlerts` come from, and [Audio Mode & Onboarding](#audio-mode--onboarding) below for the identity/situation half. Mirrored by hand between `src/services/ai/live/ephemeralToken.ts` (frontend) and `server/src/services/cropDoctorConfig.ts` (backend) — there is no shared module across that boundary, and `server/src/routes/liveRoutes.ts`'s zod schema must accept every field the frontend sends or it is silently stripped before `createLiveToken()` ever sees it.
+
+---
+
+## Audio Mode & Onboarding
+
+- **What it is**: the app's first-run flow (`src/features/onboarding/OnboardingGate.tsx`) plus a conversational voice mode (`src/features/voice-mode/VoiceMode.tsx`) built on Sarvam AI. On a farmer's first-ever visit — gated on a dedicated `farmStore.onboardingComplete` flag (`services/identity/farmerIdentity.ts`'s `isOnboardingComplete()`/`markOnboardingComplete()`), kept deliberately separate from the farmer's name so setting the name doesn't itself unmount the gate before the mode-choice screen ever shows — the app asks for their name (by voice, with a mic-denied/no-key text fallback and a confirm-or-edit step, since raw STT transcripts can include filler words), then offers two primary modes:
+  - **Audio Mode**: conversational voice, powered by Sarvam AI's `saaras:v3` speech-to-text and `bulbul:v3` text-to-speech.
+  - **Video Mode**: routes straight into [Crop Doctor (Live)](#crop-doctor-live-agent) — reframed here as the second primary mode rather than a secondary feature, with no separate implementation.
+  - Both modes stay reachable afterward from the header ("Audio Mode" / "Crop Doctor" buttons) — onboarding is a first-run nudge, not a lock.
+- **Audio Mode is a speech layer, not a second brain**: unlike Team 012's `voice` branch reference implementation (which this was adapted from, not copied — it called Gemini directly from the browser with a client-exposed key and re-implemented farm-question answering from scratch), Audio Mode's "brain" is the SAME [`answer-farm-question`](#skill-answer-farm-question) A2A skill the typed Farm Advisor calls. That means one prompt to maintain, one place mem0 memory is wired in, one harness log, one safety boundary — Sarvam only supplies ears and a voice on top of infrastructure that already existed.
+- **Security — no client-exposed key**: Sarvam has no ephemeral-token/direct-connect mode like Gemini Live, so `SARVAM_API_KEY` stays server-side and every speech turn is proxied through `server/src/routes/voiceRoutes.ts` / `server/src/services/sarvamProxy.ts` (`POST /api/voice/speech-to-text`, `POST /api/voice/text-to-speech`, `GET /api/voice/status`) — the same trust boundary as `/api/ai/generate`, just for audio.
+- **Recording — real WAV, not a relabeled container**: `src/services/voice/AudioRecorder.ts` captures raw PCM directly via the Web Audio API (the same technique `CropDoctorSession.ts` uses for its mic pipeline) and `wavEncoder.ts` wraps it in a genuine 16kHz mono PCM16 WAV file. This was a deliberate correction, confirmed against the live API: Sarvam's `/speech-to-text` validates the declared content-type against a strict allowlist that does NOT include `audio/webm` — the only format a browser's `MediaRecorder` can produce on most platforms — and an early version of this code that reported the recorder's honest `audio/webm` mime type was rejected with `HTTP 400: Invalid file type`. The reference implementation avoided that specific error by mislabeling its webm/opus blob as `audio/wav`, which only avoids the validation error, not the underlying mismatch between declared and actual bytes. Also keeps the reference's voice-activity-detection idea: recording auto-stops after ~2s of silence following detected speech.
+- **Speaking a long answer — chunked under Sarvam's per-call limit**: `src/services/voice/speak.ts` is the one place both `VoiceMode` and `OnboardingGate` call to speak text aloud, instead of hitting `sarvamClient.synthesizeSpeech()` directly. Confirmed against the live API: a single `inputs[0]` over 500 characters is rejected with `HTTP 400: String should have at most 500 characters` — and the knowledge-base-grounded fallback answers (`buildLocalFarmAnswer`) are written for on-screen reading, not speech, so they routinely run past that. `ttsChunking.ts`'s `chunkTextForTts()` greedily packs sentences into ≤500-character pieces (pure and unit tested, including a hard-slice fallback for a run-on sentence with no punctuation at all); `speak()` plays each resulting clip back-to-back.
+- **Speaking never masks a correct answer**: `speak()` never throws — a synthesis failure on one chunk just stops playback there, since the answer is already computed, stored, and on screen by the time narration starts. `VoiceMode.askQuestion()` deliberately keeps the answer-generation step (dispatch/storage/memory, which CAN legitimately fail and must surface as an error) in a separate try block from the speaking step, so a TTS hiccup can never make a correct answer look like it failed.
+- **Speaking never hangs the UI**: `playOnce()` inside `speak.ts` races each clip's `ended`/`error` event against a 45-second safety-net timeout, so a single stalled `<audio>` element (bad clip, a browser tab frozen in the background, whatever) can never leave the mic permanently disabled on "speaking…". Verified with fake timers (`src/tests/speak.test.ts`) since real audio-element event timing isn't controllable in a test environment.
+- **The context-assembly layer**: `src/services/context/farmContext.ts`'s `getFarmContextSnapshot()` is the one place that reads "who is this farmer, what crop, what situation" from `farmStore` — used by Audio Mode, the typed Farm Advisor, and Crop Doctor's live-token request, so every agent personalises consistently instead of each screen deriving context its own way.
+- **Identity**: `src/services/identity/farmerIdentity.ts` — the farmer's name, `localStorage`-scoped to this device (mirrors `services/session/sessionId.ts`), read once into `farmStore.farmerName` and persisted through `setFarmerName()`.
+- **Closing the real "no farm context" gap — `declaredSituation`**: `farmStore.profile`/`selectedCrop` only ever get set by walking the pre-sowing wizard, but Audio Mode is the app's default landing screen (see "Front door" below) — a farmer who only ever uses Audio Mode would otherwise get generic, knowledge-base-only answers forever, exactly contradicting the point of the context-assembly layer above. `useVoiceConversation.ts`'s `askQuestion()` opportunistically captures the first sufficiently substantial thing a farmer says (≥15 characters, ≥3 words — long enough to filter out "hi"/"hello") as `farmerIdentity.ts`'s `declaredSituation`, verbatim, once, `localStorage`-persisted like the farmer's name. Never treated as engine-verified (per [[krishi-mitra-ai-boundary]]): `answerFarmQuestionPrompt.ts` surfaces it under its own clearly-labelled "What the farmer has told us directly" section, informational only, identical in spirit to how mem0 memories are framed, and real `profile`/`crop` facts always win if both exist (`farmContext.ts`'s `summariseSituation()` only falls back to it when nothing else is known). Read by `FarmAdvisor.tsx` too, and automatically by Crop Doctor's live-token request through `summariseSituation()` — share it once in Audio Mode, every mode benefits, with zero additional wiring per surface.
+- **Proactive and reactive, at the front door**: since Audio Mode is where most farmers land, it is also where the [Farm Timeline](#farm-timeline--proactive--reactive-shared-context) is most visible. Proactive: the greeting mentions the single nearest upcoming calendar alert when one exists ("Heads up — aphid risk begins in 3 days"). Reactive: every substantial thing a farmer says is logged as a timeline event (same heuristic as `declaredSituation`), and the quiet "Lab report" icon button (top-right) lets a farmer photograph a soil test and get real pH/N/P/K grounding without ever opening the profile wizard — `useVoiceConversation.ts`'s `uploadLabReport()` calls the same `extract-soil-report` skill the wizard would, storing the result via `services/identity/labReport.ts`.
+- **The orb**: one dominant, tappable element (`.voice-orb-wrap` in `globals.css`) carries the mic, the idle/listening/thinking/speaking state, and the visual center of the screen — no separate waveform or boxed status card. Its glow shifts through the app's own Google-brand colors per state (blue→green idle, red→amber recording, blue→violet thinking, green→blue speaking) rather than an unrelated accent, so Audio Mode still reads as the same product as the rest of the app. Deliberately minimal chrome throughout: text-only mode tabs (no pill), a borderless compose input (a hairline, not a card, with the send button fading in only once there's something to send), and inline single-line status/error text instead of stacked alert panels.
+- **Type-to-ask compose bar**: the bottom input is a real text field, not just a status caption — typing and pressing send (or Enter) submits the question through the exact same `askQuestion()` path speech does, so a farmer who'd rather type than talk gets the identical dispatch, memory, and spoken-aloud answer.
+- **Front door**: `farmStore`'s default `stage` is `'audio-mode'` — opening Krishi Mitra lands directly in Audio Mode, not the profile wizard. The wizard, Digital Twin, and Crop Doctor remain one header tap away.
+- **Graceful degradation**: no `SARVAM_API_KEY` → `/api/voice/*` return 503, `OnboardingGate` shows a text-only name field, and `VoiceMode` shows a small inline note pointing to the typed "Ask Advisor" (same brain, no voice) while its own compose bar keeps working. No farmer is ever blocked by a missing key.
+- **Running locally — one command, not two**: `npm run dev:full` (root `package.json`, via `concurrently`) starts the Vite dev server AND `server/`'s Express backend together — this is what `.claude/launch.json` runs. Running plain `npm run dev` starts only the frontend half; every `/api/*` call then depends on the backend also running separately (`cd server && npm run dev`), and `vite.config.ts`'s dev proxy is deliberately configured with an `error` handler so a refused connection there (backend not started) degrades to the same clean `503` this app's own "not configured" responses already use, rather than an unhandled-looking raw `500`.
+- **Architecture — hooks own the logic, components only render**: `VoiceMode.tsx` and `OnboardingGate.tsx` are both thin views over `useVoiceConversation.ts` and `useOnboarding.ts` respectively. Each hook owns its full state machine, side effects (voice-status check, history load, the silence-detection listener), and every service call (dispatch, storage, memory, recording); the component it backs only decides how that state renders. Splitting it this way is what makes the conversation logic independently unit-testable — `useVoiceConversation.test.ts` (10 tests) and `useOnboarding.test.ts` (7 tests) exercise the full mic lifecycle, error paths, and dispatch wiring via `@testing-library/react`'s `renderHook`, with `AudioRecorder`/`sarvamClient`/`speak`/the A2A orchestrator all mocked at the module boundary — none of it requires mounting the DOM tree the view renders into. The one thing deliberately left in the component rather than the hook: `OnboardingGate`'s GSAP entrance animation, since driving a ref-based DOM animation is a view concern, not conversation logic.
+- **Tests**: `src/tests/useVoiceConversation.test.ts` (including reactive timeline logging and `uploadLabReport`'s success/error paths), `src/tests/useOnboarding.test.ts` (see architecture note above), `src/tests/audioModeOnboarding.test.ts` (identity persistence, lab report persistence, context assembly, prompt personalisation, Sarvam client error-surfacing), `src/tests/proactiveEngine.test.ts` and `src/tests/farmTimeline.test.ts` (see [Farm Timeline](#farm-timeline--proactive--reactive-shared-context)), `src/tests/ttsChunking.test.ts` (chunk-size invariants, sentence-boundary splitting, hard-slice fallback), `src/tests/speak.test.ts` (sequential chunk playback, the timeout safety net via fake timers, never-throws-on-synthesis-failure), `src/tests/wavEncoder.test.ts` (WAV header correctness), `server/src/services/sarvamProxy.test.ts` (STT/TTS request shape, auth header, error mapping).
+
+---
+
+## Long-term Memory (mem0)
+
+- **Location**: `server/src/services/memoryService.ts` (backend) + `src/services/memory/memoryClient.ts` (frontend)
+- **What it is**: a semantic memory layer via [mem0](https://mem0.ai), storing durable FACTS extracted across every conversation a farmer has ever had with any agent ("grows tomatoes on 2 acres in Coimbatore," "already tried neem oil for aphids last season") — distinct from `services/storage`'s per-thread chat transcripts, which keep the full text of one conversation. A new conversation can be personalised without replaying the entire history.
+- **Boundary**: **Explains/personalises only, and explicitly non-authoritative.** Recalled memories are injected into the [General Farm Advisor](#general-farm-advisor-agent) and [Calendar Query](#calendar-query-agent) prompts under a clearly labelled "What we remember about this farmer" section, with an explicit instruction that the current farm context always wins on conflict, and — for Calendar Query specifically — memories are never eligible for `citedFacts`, which stays day-data-only.
+- **Graceful degradation**: same "resolve once, never throw" discipline as `bucketStore.ts` and `geminiProxy.ts`. With no `MEM0_API_KEY`, `getMemoryBackend()` resolves to a `NullMemoryBackend` and every recall/record call is a safe no-op — every feature works identically, just without cross-conversation personalisation. A network failure against a configured mem0 account degrades the same way rather than breaking the calling agent's answer.
+- **Wiring**: `FarmAdvisor.tsx` and `CropCalendar.tsx` both call `recallMemories(question)` before dispatching, pass the result as `memories` in the skill input, and call `recordMemory()` for both the farmer's question and the agent's answer afterward (fire-and-forget, never blocking the UI).
+- **Routes**: `POST /api/sessions/:sessionId/memory` (record one turn), `GET /api/sessions/:sessionId/memory?query=...&limit=` (recall).
+- **Tests**: `server/src/services/memoryService.test.ts`, `src/tests/memoryIntegration.test.ts`.
 
 ---
 
@@ -154,6 +218,73 @@ An API key upgrades answers from `local` to `gemini` source; it never unlocks ne
 - **What it does**: anchors a sowing date to the 1st of the farmer's chosen sowing month (rolled to next year if that month has already started), then renders a real month-grid calendar from soil-prep through harvest, color-coded by phase, with milestone markers and pest-risk flags during the vulnerable growth window.
 - **Why it's the AI's ground truth**: this closed set of per-day facts is exactly what `CalendarQueryAgent` is allowed to reference — the engine decides what's true about a day, the agent only explains it in response to a question.
 - **Tests**: `src/tests/cropCalendarEngine.test.ts` — determinism, prep-day placement, phase transitions, pest-risk windowing, harvest milestone.
+
+---
+
+## Farm Timeline — Proactive & Reactive shared context
+
+- **Location**: `src/engine/proactiveEngine.ts` (deterministic, proactive) + `src/engine/currentCropCalendar.ts` (shared plan builder) + `src/services/timeline/farmTimeline.ts` (persistence, reactive) + `src/services/identity/labReport.ts` (soil numbers independent of the wizard) + `src/services/context/farmContext.ts` (assembly, read by every agent/mode).
+- **Boundary**: **Decides** (proactive half, deterministic) **/ records** (reactive half) — neither is an AI agent, and neither originates a fact an agent may treat as more authoritative than what it actually says. See [[krishi-mitra-ai-boundary]].
+- **What it closes**: every agent previously only knew a farmer's *identity* (name, `declaredSituation`) and *static* facts (`profile`, top recommendation) — nothing about what had actually happened on the farm, and nothing forward-looking outside the Cultivation Calendar screen itself, which is gated behind the pre-sowing wizard and invisible to an audio-only farmer (Audio Mode is the app's default landing screen). This is the shared, timestamped record every mode now reads and writes through the same `farmContext.ts` snapshot — "carefully managed shared memory," not a parallel context system per agent.
+
+### Proactive: `engine/proactiveEngine.ts`
+- **Decides, deterministically — not an AI agent.** `buildProactiveAlerts(plan, referenceDate, options?)` walks the SAME `CropCalendarPlan` the Cultivation Calendar Engine already computes and returns milestones plus newly-opening pest-risk windows within the next 7 days (configurable via `lookAheadDays`). Every alert is copied verbatim from a day the engine already scored — nothing here is predicted by a model. A risk already open before `referenceDate` is never repeated; only the day it first opens is surfaced.
+- **One plan, two call sites, never two answers**: `engine/currentCropCalendar.ts#deriveCurrentCropCalendarPlan(profile, crop, recommendation)` is the one place that wires soil-gap analysis + the crop's pest list + `cropCalendarEngine.ts` together. Both `CropCalendar.tsx` and `farmContext.ts` call it, so the calendar screen and every agent's "upcoming" context can never disagree about what today's plan actually is.
+- **Never persisted.** Unlike the reactive half below, this is recomputed on every `getFarmContextSnapshot()` call — "today" moves, so a stored proactive alert would silently go stale.
+- **Where it surfaces**: the Cultivation Calendar's new "Farm Journal" card (upcoming, next 7 days), the Audio Mode greeting ("Heads up — aphid risk begins in 3 days for your groundnut"), and every `answer-farm-question` / Crop Doctor Live prompt as an engine-grounded (not farmer-reported) context section.
+- **Tests**: `src/tests/proactiveEngine.test.ts` — window boundaries, dedup of an already-open risk, a custom look-ahead window, ordering, empty-plan safety.
+
+### Reactive: `services/timeline/farmTimeline.ts`
+- **Records, never decides.** `logTimelineEvent()` appends one `FarmTimelineEvent` (`localStorage`-persisted, capped at the most recent 40, device-scoped exactly like `farmerIdentity.ts`) whenever something actually happens:
+  - A farmer's substantial statement in Audio Mode (`useVoiceConversation.ts`'s `askQuestion()`) — the same ≥15-character/≥3-word heuristic that already gates `declaredSituation` capture, reused rather than reinvented.
+  - A farmer's quick note typed into the Cultivation Calendar's Farm Journal card.
+  - An engine-verified pest match confirmed live in Crop Doctor (`CropDoctor.tsx`'s `onPestResolved`) — logged only when `matched: true`; a non-match is not itself an event worth remembering.
+  - A successful lab report upload (below).
+- **Non-authoritative, exactly like `declaredSituation` and mem0 memories.** Every prompt that surfaces recent events labels them "farmer/agent-reported, not verified" — the current farm context always wins on conflict.
+- **Tests**: `src/tests/farmTimeline.test.ts` — persistence, most-recent-first ordering, the 40-event cap dropping the oldest first, corrupt/malformed localStorage handled without throwing.
+
+### Lab report grounding: `services/identity/labReport.ts`
+- Closes a real "built but unused" gap: the [Soil Report Extractor](#soil-report-extractor-agent) agent and its `extract-soil-report` skill existed with zero UI wired to it anywhere in the app — a farmer could never actually trigger it. `useVoiceConversation.ts`'s new `uploadLabReport(file)` calls that SAME skill through the A2A orchestrator, but stores the reading independently of the wizard's `FarmProfile` (`services/identity/labReport.ts`, `localStorage`-scoped like `farmerIdentity.ts`), so an audio-only farmer who never walks the wizard still gets real pH/N/P/K grounding instead of the model guessing — "logged in, give details, and just speak," with no wizard required in between.
+- A successful upload logs a `lab-report` timeline event with the readings taken; an unrecognised document surfaces the model's own warning text (e.g. "too blurry") rather than a generic failure.
+- **UI**: a quiet icon-only "Lab report" button, top-right of the Audio Mode screen — deliberately not competing with the orb.
+- **Scope note**: `FarmProfileForm.tsx` does not pre-fill from a stored lab report — kept out of scope to avoid ever silently overwriting a farmer's own typed entry with an old photo's reading.
+- **Tests**: the `labReport (services/identity)` block in `src/tests/audioModeOnboarding.test.ts` — persistence, corrupt-data safety, and that `farmContext.ts` prefers the wizard profile's numbers over an uploaded lab report whenever both exist.
+
+### How every agent sees it
+`services/context/farmContext.ts`'s `FarmContextSnapshot` gained three fields — `recentEvents` (last 5, reactive), `upcomingAlerts` (next 7 days, proactive), `labReport` — assembled once and read identically by `answer-farm-question` ([General Farm Advisor](#general-farm-advisor-agent), used by both the typed Advisor and Audio Mode) and [Crop Doctor Live](#crop-doctor-live-agent)'s system instruction. One assembly point, every consumer — the same discipline `declaredSituation` established, now extended rather than duplicated.
+
+**Distinguishing the app's "memory" layers** — easy to conflate, deliberately different jobs:
+
+| Layer | What it holds | Persisted? | Authoritative? |
+|---|---|---|---|
+| `declaredSituation` | One opportunistic, one-shot sentence | Yes (localStorage) | No — informational fallback only |
+| Farm Timeline (`farmTimeline.ts`) | A growing, timestamped log of discrete events | Yes (localStorage, capped at 40) | No — farmer/agent-reported |
+| Proactive alerts (`proactiveEngine.ts`) | What the calendar predicts next | No — recomputed fresh every call | Yes — engine-computed, same tier as the recommendation itself |
+| Weather alerts (`weatherRules.ts`) | What the forecast predicts next | No — fetched + recomputed fresh every call | Yes — engine-computed, same tier as `proactiveEngine.ts` |
+| mem0 (`memoryClient.ts`) | Semantic facts extracted across ALL past conversations | Yes (mem0's own hosted store) | No — informational, current context always wins |
+
+---
+
+## Weather-based proactive alerts
+
+- **Location**: `server/src/services/weatherProxy.ts` (server-side API call) + `server/src/routes/weatherRoutes.ts` (proxy routes) + `src/services/weather/weatherClient.ts` (frontend client) + `src/engine/weatherRules.ts` (deterministic thresholds) + `src/services/weather/weatherContext.ts` (glue, used by every consumer).
+- **Boundary**: **Decides**, deterministically — not an AI agent, and structurally identical in spirit to [Farm Timeline](#farm-timeline--proactive--reactive-shared-context)'s proactive half: a forecast day either crosses a fixed threshold or it doesn't. No model ever sees raw weather data and decides what it means; `weatherRules.ts` decides, agents only relay the resulting `FarmTimelineEvent` the same way they relay a calendar milestone.
+- **Data source**: [Google Maps Platform's Weather API](https://developers.google.com/maps/documentation/weather) (`forecast/days:lookup`) — generally available since June 2025, India is within the supported region set, metric units requested explicitly. `GOOGLE_WEATHER_API_KEY` is read server-side only, same trust boundary as `GEMINI_API_KEY`/`SARVAM_API_KEY`; the browser never sees it.
+- **Location resolution is a closed set, not free-form geocoding**: the frontend sends a `region` name (one of the four `FarmProfileForm.tsx` already offers — Coimbatore, Pollachi, Tiruppur, Mettupalayam); `weatherProxy.ts`'s `REGION_COORDINATES` resolves that to lat/lng server-side. A request can never spend this app's paid API quota on an arbitrary global coordinate — the same closed-set discipline this app already applies to crops and pests.
+- **The four alert rules** (`engine/weatherRules.ts`), each a plain, documented threshold an agronomist would recognise:
+  - **Heavy rain** — ≥70% probability AND ≥10mm expected: postpone spraying/fertiliser/harvest that day.
+  - **High wind** — ≥20 km/h: avoid spraying due to drift risk.
+  - **Heat stress** — ≥38°C forecast high: increase irrigation, avoid midday fieldwork.
+  - **Thunderstorms** — ≥50% probability: avoid fieldwork, postpone spraying.
+  
+  A single day can raise more than one alert (e.g. hot AND windy); nothing is deduplicated across days the way `proactiveEngine.ts` dedupes a continuously-open pest-risk window, since each day's forecast is independent.
+- **Merged into the SAME `upcomingAlerts` list the calendar's proactive alerts already populate** — `services/weather/weatherContext.ts#getWeatherProactiveAlerts(region)` returns `FarmTimelineEvent[]`, and every consumer concatenates it with `farmContext.ts`'s calendar-derived `upcomingAlerts` before use, rather than threading a separate "weather" field through every prompt/UI surface that already understands this shape. Wired into:
+  - **Audio Mode** (`useVoiceConversation.ts`) — both the front-door greeting's "Heads up" line and every `answer-farm-question` dispatch.
+  - **The typed Advisor** (`FarmAdvisor.tsx`) — every dispatch.
+  - **Crop Doctor Live** (`CropDoctor.tsx`) — folded into the same `upcomingAlerts` sent to `buildCropDoctorSystemInstruction`.
+  - **The Cultivation Calendar's Farm Journal** (`CropCalendar.tsx`) — merged into the "Upcoming · predicted" list shown alongside calendar milestones. Unlike the calendar's own alerts (a `useMemo`, since the plan is already in memory), this is a `useEffect` + `useState` fetch, since a live network call can't live inside a synchronous memo.
+- **Graceful degradation, thoroughly**: no key configured, an unknown/missing region, or any network failure all resolve to `[]` at every layer (`weatherClient.ts`, `weatherContext.ts`) — nothing ever throws into a caller, and every proactive-alert surface simply falls back to showing only the calendar's own alerts, exactly as it did before this feature existed.
+- **Tests**: `server/src/services/weatherProxy.test.ts` (region validation, request shape, response mapping, HTTP and in-body error handling), `src/tests/weatherRules.test.ts` (every threshold, null-safety, multi-alert days, sort order), `src/tests/weatherContext.test.ts` (no-region short-circuit, degrade-to-`[]` on rejection).
 
 ---
 
@@ -176,7 +307,7 @@ An API key upgrades answers from `local` to `gemini` source; it never unlocks ne
 - **Interface**: `VoiceAgentPort` (`src/services/voice/types.ts`) — `isSupported()`, `start(onTranscript, onError)`, `stop()`, `speak(text)`. Mirrors the `AiTransport` pattern in `services/ai/contracts/aiTypes.ts`: one interface, swappable implementations, resolved through a single lazy-singleton factory (`getVoiceAgent()` in `services/voice/index.ts`).
 - **Default implementation**: `WebSpeechVoiceAgent` — the browser's own `SpeechRecognition` + `speechSynthesis` APIs. Zero dependencies, zero backend, works today in Chrome/Edge (desktop and Android). Falls back to `NullVoiceAgent` (mic hidden) where the browser doesn't support it (Firefox, Safari at time of writing).
 - **Boundary**: **Explains and routes, never decides.** `VoiceCommandBus.parseVoiceIntent()` is pure keyword matching (not a model call) into a closed set of intents (`load_demo`, `go_to_stage`, `go_back`, `read_top_recommendation`, `unrecognized`). `executeVoiceIntent()` calls the exact same `farmStore` actions and the exact same navigation guards a manual button click would — a voice command cannot jump ahead of a step the farmer hasn't unlocked, and it cannot alter a score.
-- **Planned integration**: a teammate is building a dedicated voice agent. It becomes a second `VoiceAgentPort` implementation; swapping `services/voice/index.ts`'s factory is the only change needed — `VoiceCommandBus` and `VoiceControlWidget` (`src/features/voice-control/VoiceControlWidget.tsx`) do not change.
+- **Relationship to Audio Mode**: this widget is command-and-control (navigate, read back a number) via free browser speech recognition; it is intentionally NOT the conversational voice experience. That is [Audio Mode](#audio-mode--onboarding) — a separate, Sarvam-AI-powered feature with its own recording/STT/TTS pipeline, since open-ended farming Q&A needs a real model in the loop, not keyword matching. The two coexist: this widget for fast navigation from anywhere, Audio Mode for actually talking through a question.
 - **UI**: floating mic button, bottom-left of the app shell. Shows the live transcript and the spoken reply as text too, so it degrades gracefully for a farmer without headphones and stays screenshot/demo-friendly for judges.
 
 ---
@@ -235,6 +366,56 @@ Fine for a quick local demo; not something you want in a real deployment.
   `GEMINI_API_KEY` on the server — see `deploy/DEPLOY.md` step 2b.
 
 Tests: `src/tests/serverProxyTransport.test.ts` (frontend), `server/src/services/geminiProxy.test.ts` (backend).
+
+### A `VITE_*` env variable that silently read as empty — how, and the actual fix
+
+For a stretch of this project's development, `VITE_AI_TRANSPORT=server` was correctly set in
+`.env`, `server/` correctly held a real `GEMINI_API_KEY`, and the app STILL ran in "offline mode"
+— every answer came from the deterministic local fallback, `AiTracePanel` showed `OFFLINE` /
+`no transport`, and no error appeared anywhere. The cause: `harnessConfig.ts` (and four other
+files reading `VITE_API_BASE_URL` — `services/memory/memoryClient.ts`,
+`services/storage/index.ts`, `services/voice/sarvamClient.ts`, `services/ai/live/ephemeralToken.ts`)
+all read `import.meta.env` through an indirection:
+
+```ts
+// Looked completely reasonable. Silently resolved to nothing under Vite's dev-mode
+// client injection, with no thrown error anywhere.
+const meta = import.meta as unknown as { env?: Record<string, unknown> };
+const metaEnv = meta ? meta.env : undefined;
+```
+
+instead of the direct literal form:
+
+```ts
+const metaEnv = import.meta.env;
+```
+
+Confirmed empirically (fetching the module fresh with cache disabled, comparing both forms
+side by side in the same file): Vite's dev server only reliably populates `import.meta.env` for
+a module when a literal `import.meta.env` (or `import.meta.env.KEY`) expression appears
+somewhere in that module's own source for it to recognise. Access it only through a renamed
+local variable, and `import.meta` at runtime is a bare `{ url: string }` — no thrown error, no
+warning, just an object with the property silently absent, which is exactly the shape
+`resolveEnvSource`'s own defensive `if (metaEnv && typeof metaEnv === "object")` guard was
+written to treat as "not configured." A correct fallback design faithfully executing on a false
+premise, with the harness's own "never throw, degrade gracefully" philosophy actively working
+against diagnosing it — this failed exactly the way it was built to fail safe.
+
+Two real fixes landed, not one workaround:
+1. **The actual bug**: rewrote every one of those five files to read `import.meta.env` directly
+   (see the comment on `resolveEnvSource` in `harnessConfig.ts`).
+2. **Why it typechecked despite being wrong**: no `src/vite-env.d.ts` existed, so
+   `import.meta.env` had no real type and every reader needed an `as unknown as {...}` cast to
+   compile at all — which is exactly the shape of the broken indirection. Added
+   `src/vite-env.d.ts` with `/// <reference types="vite/client" />` plus an explicit
+   `ImportMetaEnv` augmentation listing every `VITE_*` variable this app actually reads, so
+   direct `import.meta.env.VITE_X` access both typechecks cleanly AND catches a typo'd variable
+   name as a compile error instead of a silent `undefined`.
+
+`vite.config.ts` also pins `envDir` explicitly to its own directory — a legitimate defensive
+addition made while chasing this bug, but NOT what actually fixed it (`process.cwd()` was
+already correct throughout); kept because it costs nothing and removes a real class of future
+"which directory is `.env` loaded from" failure modes.
 
 ---
 

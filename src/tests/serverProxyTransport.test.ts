@@ -76,6 +76,28 @@ describe("ServerProxyTransport", () => {
     });
   });
 
+  it("forwards `tools` in the request body and returns `functionCalls` from the reply", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        text: "",
+        modelId: "gemini-3.6-flash",
+        functionCalls: [{ name: "get_weather_alerts", args: { region: "Coimbatore" } }],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const config = loadHarnessConfig({ VITE_AI_TRANSPORT: "server" });
+    const transport = new ServerProxyTransport(config, "");
+    const tools = [{ name: "get_weather_alerts", description: "check weather", parameters: { type: "object" } }];
+    const result = await transport.generate({ system: "sys", user: "will it rain?", tools }, { timeoutMs: 5000 });
+
+    expect(result.functionCalls).toEqual([{ name: "get_weather_alerts", args: { region: "Coimbatore" } }]);
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse((init as RequestInit).body as string);
+    expect(body.tools).toEqual(tools);
+  });
+
   it("is available whenever fetch exists, with no client-side key required", () => {
     const config = loadHarnessConfig({ VITE_AI_TRANSPORT: "server" });
     const transport = new ServerProxyTransport(config, "");

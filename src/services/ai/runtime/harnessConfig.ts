@@ -85,21 +85,28 @@ function createDefaultConfig(): HarnessConfig {
 
 /**
  * Pick the env bag to read from. An explicitly supplied object always wins (so tests can
- * inject without touching ambient state); otherwise fall back to `import.meta.env`, guarded
- * because it does not exist in every runtime and is untyped without `vite/client`.
+ * inject without touching ambient state); otherwise fall back to `import.meta.env`.
+ *
+ * Deliberately accesses `import.meta.env` as a direct literal expression rather than through an
+ * intermediate `const meta = import.meta; meta.env` alias. Confirmed empirically: Vite's dev-mode
+ * client injection only reliably populates `import.meta.env` for a module when that literal
+ * pattern appears somewhere in its own source — the aliased/indirect form left `import.meta`
+ * looking like a bare `{url: string}` object at runtime (no thrown error, just silently absent),
+ * which made this resolve to the all-defaults "adk"/disabled config even with a real
+ * `VITE_AI_TRANSPORT=server` in `.env`. `src/vite-env.d.ts` (`/// <reference types="vite/client" />`)
+ * is what makes this typecheck without a cast.
  */
 function resolveEnvSource(env?: Record<string, unknown>): Record<string, unknown> {
   if (env && typeof env === "object") {
     return env as Record<string, unknown>;
   }
   try {
-    const meta = import.meta as unknown as { env?: unknown };
-    const metaEnv = meta ? meta.env : undefined;
+    const metaEnv = import.meta.env;
     if (metaEnv && typeof metaEnv === "object") {
-      return metaEnv as Record<string, unknown>;
+      return metaEnv as unknown as Record<string, unknown>;
     }
   } catch {
-    // import.meta unavailable in this runtime — fall through to an empty bag.
+    // import.meta.env unavailable in this runtime — fall through to an empty bag.
   }
   return {};
 }
