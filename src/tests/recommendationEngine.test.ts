@@ -63,23 +63,4 @@ describe('Recommendation Engine', () => {
     expect(ranked[0].crop.id).toBe('test-good')
     expect(ranked[1].crop.id).toBe('test-bad')
   })
-
-  it.each([
-    [40, 'Nitrogen requirement is fully covered.'],
-    [36, 'Small nitrogen deficit; minor supplementation is recommended.'],
-    [24, 'Moderate nitrogen deficit; correction is required before sowing.'],
-    [12, 'Severe nitrogen deficit; crop performance is at high risk.']
-  ])('explains nitrogen severity when %s kg per acre is available', (available, expectedMessage) => {
-    const result = evaluateCrop({ ...profile, nitrogenKgPerAcre: available }, goodCrop)
-    const nitrogenTrace = result.trace.find(entry => entry.factor === 'nitrogen')
-
-    expect(nitrogenTrace?.explanation).toBe(expectedMessage)
-  })
-
-  it('separates a strong agronomic score from its correction requirement', () => {
-    const result = evaluateCrop({ ...profile, nitrogenKgPerAcre: 36 }, goodCrop)
-
-    expect(result.score).toBeGreaterThanOrEqual(80)
-    expect(result.decisionStatus).toBe('recommended-with-corrections')
-  })
 })

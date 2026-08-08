@@ -19,5 +19,5 @@ export const SAFETY_WARNINGS = {
   CONSERVATIVE_LOSS: "High financial risk: this crop may produce a loss under adverse conditions.",
   ESTIMATE_ONLY: "Scenario-based estimate, not guaranteed income.",
   PEST_FORECAST: "This section provides preventive risk guidance and is not a live outbreak forecast.",
-  DISCLAIMER: "Thulir provides educational, scenario-based decision support. Agricultural conditions vary by location, weather, seed variety, water availability, and farm practices. Confirm major cultivation, fertilizer, pesticide, and financial decisions with a qualified agricultural professional."
+  DISCLAIMER: "Krishi Mitra provides educational, scenario-based decision support. Agricultural conditions vary by location, weather, seed variety, water availability, and farm practices. Confirm major cultivation, fertilizer, pesticide, and financial decisions with a qualified agricultural professional."
 };

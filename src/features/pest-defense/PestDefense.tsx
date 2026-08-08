@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { useFarmStore } from '../../state/farmStore'
-import { spreadsheetPests } from '../../data/spreadsheetData'
+import { samplePests } from '../../data/sample/pests'
 import { ArrowRight, ShieldAlert, ShieldCheck } from 'lucide-react'
 
 const PestDefense: React.FC = () => {
@@ -8,7 +8,7 @@ const PestDefense: React.FC = () => {
 
   const pests = useMemo(() => {
     if (!selectedCrop) return []
-    return spreadsheetPests.filter(p => p.cropId === selectedCrop.id).sort((a, b) => {
+    return samplePests.filter(p => p.cropId === selectedCrop.id).sort((a, b) => {
       const riskScore: Record<'high' | 'medium' | 'low', number> = { high: 3, medium: 2, low: 1 }
       return riskScore[b.riskLevel] - riskScore[a.riskLevel]
     })
@@ -78,7 +78,7 @@ const PestDefense: React.FC = () => {
         </div>
       )}
 
-      <button className="btn btn-primary mobile-full-button" onClick={() => setStage('action-plan')} style={{ width: 'auto' }}>
+      <button className="btn btn-primary" onClick={() => setStage('action-plan')} style={{ width: 'auto' }}>
         Generate Final Action Plan <ArrowRight size={18} />
       </button>
     </div>

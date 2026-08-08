@@ -1,40 +1,41 @@
 :root {
-  /* Colors */
+  /* Colors — Google brand palette */
   --background: #FFFFFF;
   --foreground: #1F1F1F;
   --muted: #E5E5E5;
   --muted-foreground: #757575;
-  --accent: #4285F4;
-  --accent-secondary: #34A853;
+  --accent: #4285F4;          /* Google Blue */
+  --accent-secondary: #669DF6;
   --accent-foreground: #FFFFFF;
   --border: #E5E5E5;
   --card: #FFFFFF;
   --ring: #4285F4;
+
+  /* Raw brand hues, for the rare spot that wants the literal Google colors directly
+     (e.g. the four-colour brand stripe) rather than a semantic role. */
+  --brand-blue: #4285F4;
   --brand-red: #EA4335;
   --brand-yellow: #FBBC05;
   --brand-green: #34A853;
-  --black: #000000;
-  
-  /* Additional feedback colors */
-  --color-green-100: rgba(52, 168, 83, 0.14);
-  --color-green-50: rgba(52, 168, 83, 0.08);
-  --color-green-500: #34A853;
-  --color-green-700: #34A853;
-  --color-green-800: #1F1F1F;
-  --color-amber-50: rgba(251, 188, 5, 0.08);
-  --color-amber-100: rgba(251, 188, 5, 0.18);
-  --color-amber-600: #FBBC05;
-  --color-amber-700: #1F1F1F;
-  --color-red-50: rgba(234, 67, 53, 0.08);
-  --color-red-100: rgba(234, 67, 53, 0.14);
-  --color-red-600: #EA4335;
-  --color-red-700: #EA4335;
+
+  /* Semantic feedback colors, each a tint/shade of one brand hue above. */
+  --color-green-100: #CEEAD6;
+  --color-green-600: #1E8E3E;
+  --color-green-700: #188038;
+  --color-amber-50: #FEF7E0;
+  --color-amber-100: #FEEFC3;
+  --color-amber-600: #F9AB00;
+  --color-amber-700: #8F5B00;
+  --color-red-50: #FCE8E6;
+  --color-red-100: #FAD2CF;
+  --color-red-600: #D93025;
+  --color-red-700: #C5221F;
 
   /* Typography */
   --font-display: 'Calistoga', Georgia, serif;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
@@ -42,11 +43,11 @@
   --shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
   --shadow-accent: 0 4px 14px rgba(66, 133, 244, 0.25);
   --shadow-accent-lg: 0 8px 24px rgba(66, 133, 244, 0.35);
-  
+
   /* Layout */
   --max-width: 1152px; /* max-w-6xl */
   --touch-target: 48px;
-  --radius-lg: 16px;
+  --nav-height: 64px;
 }
 
 * {
@@ -61,7 +62,6 @@ body {
   color: var(--foreground);
   line-height: 1.625;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
 }
 
 /* Typography Defaults */
@@ -96,8 +96,22 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   height: 12px;
   width: 100%;
   border-radius: 2px;
-  background: linear-gradient(to right, rgba(66, 133, 244, 0.18), rgba(52, 168, 83, 0.12));
+  background: linear-gradient(to right, rgba(66, 133, 244, 0.15), rgba(102, 157, 246, 0.1));
   z-index: -1;
+}
+
+/* The four-colour Google brand stripe — used sparingly as a signature accent, never as a full background. */
+.brand-stripe {
+  height: 4px;
+  width: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--brand-blue) 0%, var(--brand-blue) 25%,
+    var(--brand-red) 25%, var(--brand-red) 50%,
+    var(--brand-yellow) 50%, var(--brand-yellow) 75%,
+    var(--brand-green) 75%, var(--brand-green) 100%
+  );
 }
 
 .bg-inverted {
@@ -110,7 +124,6 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 
 .texture-dots {
   position: relative;
-  isolation: isolate;
   background-image: radial-gradient(circle, white 1px, transparent 1px);
   background-size: 32px 32px;
   background-color: var(--foreground);
@@ -123,7 +136,6 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   background-color: var(--foreground);
   opacity: 0.97;
   pointer-events: none;
-  z-index: -1;
 }
 
 /* Layout */
@@ -133,9 +145,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  padding-left: max(20px, env(safe-area-inset-left));
-  padding-right: max(20px, env(safe-area-inset-right));
+  padding: 0 20px;
 }
 
 /* Header */
@@ -158,13 +168,6 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   font-weight: 700;
   letter-spacing: -0.02em;
 }
-.app-logo {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  border-radius: 12px;
-  flex: 0 0 auto;
-}
 
 /* Stepper */
 .progress-stepper {
@@ -173,8 +176,6 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   padding: 16px 0 32px 0;
   gap: 32px;
   scrollbar-width: none;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x proximity;
 }
 .progress-stepper::-webkit-scrollbar { display: none; }
 
@@ -188,7 +189,6 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   color: var(--muted-foreground);
   white-space: nowrap;
   transition: color 0.2s;
-  scroll-snap-align: start;
 }
 .step-item.active {
   color: var(--foreground);
@@ -231,7 +231,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   gap: 12px;
   border-radius: 9999px;
   border: 1px solid rgba(66, 133, 244, 0.3);
-  background: rgba(66, 133, 244, 0.06);
+  background: rgba(66, 133, 244, 0.05);
   padding: 8px 20px;
   margin-bottom: 24px;
 }
@@ -258,6 +258,13 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   50% { transform: scale(1.3); opacity: 0.7; }
 }
 
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Cards */
 .card {
   background: var(--card);
@@ -267,7 +274,6 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   margin-bottom: 20px;
   box-shadow: var(--shadow-md);
   transition: all 0.3s ease-out;
-  overflow-wrap: anywhere;
 }
 .card:hover {
   box-shadow: var(--shadow-xl);
@@ -314,7 +320,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent);
 }
 .form-control::placeholder {
-  color: rgba(117, 117, 117, 0.55);
+  color: rgba(100, 116, 139, 0.5);
 }
 .input-with-unit {
   position: relative;
@@ -396,7 +402,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   font-family: var(--font-mono);
   text-transform: uppercase;
 }
-.badge-accent { background: rgba(66, 133, 244, 0.12); color: var(--accent); }
+.badge-accent { background: rgba(66, 133, 244, 0.1); color: var(--accent); }
 .badge-green { background: var(--color-green-100); color: var(--color-green-700); }
 .badge-amber { background: var(--color-amber-100); color: var(--color-amber-700); }
 .badge-red { background: var(--color-red-100); color: var(--color-red-700); }
@@ -413,6 +419,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 }
 .alert-warning { background: var(--color-amber-50); border-left: 4px solid var(--color-amber-600); }
 .alert-danger { background: var(--color-red-50); border-left: 4px solid var(--color-red-600); }
+.alert-info { background: rgba(66, 133, 244, 0.05); border-left: 4px solid var(--accent); flex-wrap: wrap; }
 
 .alert-title { font-weight: 600; margin-bottom: 4px; color: var(--foreground); }
 .alert-desc { font-size: 15px; color: var(--muted-foreground); }
@@ -441,7 +448,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   box-shadow: var(--shadow-sm);
 }
 .score-circle.high { background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); box-shadow: var(--shadow-accent); }
-.score-circle.medium { background: var(--color-amber-600); }
+.score-circle.medium { background: var(--brand-yellow); color: var(--foreground); }
 .score-circle.low { background: var(--color-red-600); }
 .score-circle .val { font-size: 24px; line-height: 1; }
 .score-circle .lbl { font-size: 11px; opacity: 0.9; font-family: var(--font-mono); text-transform: uppercase; margin-top: 4px; }
@@ -457,295 +464,140 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   border-radius: 12px 12px 0 0;
 }
 
-/* Farm advisory */
-.advisor-card { margin-top: 32px; padding: 24px; border: 1px solid rgba(66, 133, 244, 0.25); border-radius: var(--radius-lg); background: linear-gradient(145deg, rgba(66, 133, 244, 0.06), #FFFFFF); box-shadow: var(--shadow-sm); }
-.advisor-heading { display: flex; gap: 14px; align-items: flex-start; }
-.advisor-icon { width: 44px; height: 44px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 13px; color: white; background: linear-gradient(135deg, var(--color-green-800), var(--color-green-500)); }
-.advisor-heading h2 { font-size: 21px; color: var(--foreground); }
-.advisor-heading p { margin-top: 3px; color: var(--muted-foreground); font-size: 14px; }
-.advisor-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 14px 58px; }
-.advisor-prompts button { border: 1px solid rgba(66, 133, 244, 0.25); background: #FFFFFF; color: var(--accent); border-radius: 999px; padding: 7px 11px; font-size: 12px; cursor: pointer; }
-.advisor-prompts button:hover { background: var(--muted); }
-.advisor-form { display: flex; gap: 8px; margin-left: 58px; }
-.advisor-form input { min-width: 0; flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; font: inherit; background: white; }
-.advisor-form .btn { padding: 10px 15px; }
-.advisor-reply { margin: 18px 0 0 58px; padding: 16px; border-radius: 12px; background: white; border: 1px solid var(--border); }
-.advisor-reply-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; font-weight: 700; color: var(--color-green-800); text-transform: uppercase; letter-spacing: .04em; }
-.advisor-answer { margin-top: 12px; color: var(--foreground); font-size: 14px; line-height: 1.65; }
-.advisor-answer p { margin-bottom: 8px; white-space: pre-wrap; }
-.advisor-topics { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 11px; }
+/* Crop Calendar */
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 24px;
+}
+.legend-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendar-weekdays {
+  margin-bottom: 6px;
+}
+.calendar-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+.calendar-day {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+  border: 2px solid transparent;
+  position: relative;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+.calendar-day:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.calendar-day.is-empty {
+  visibility: hidden;
+  cursor: default;
+}
+.calendar-day.is-selected {
+  border-color: var(--foreground);
+}
+.calendar-day .milestone-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--foreground);
+}
+.calendar-day .risk-mark {
+  position: absolute;
+  bottom: 2px;
+  font-size: 9px;
+  line-height: 1;
+}
 
-/* Responsive layouts */
-@media (max-width: 639px) {
+/* Responsive: phones and small tablets. Desktop values above stay the defaults; this trims
+   spacing, type, and header layout down for a one-handed, small-screen farmer audience. */
+@media (max-width: 640px) {
   .app-container {
-    overflow-x: clip;
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
+    padding: 0 16px;
   }
-
   .app-header {
+    padding: 16px 0;
     gap: 10px;
-    padding: 12px 0;
   }
-
-  .app-logo {
-    width: 52px;
-    height: 52px;
-    border-radius: 10px;
+  .app-header .logo-emoji {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 24px;
   }
-
-  .app-header h1,
-  .app-header h1[style] {
-    font-size: 21px !important;
+  .app-header h1 {
+    font-size: 19px;
   }
-
-  .app-header p[style] {
-    font-size: 10px !important;
-    letter-spacing: 0.02em;
+  h2 {
+    font-size: 1.6rem;
   }
-
-  .progress-stepper {
-    gap: 16px;
-    margin-right: -16px;
-    padding: 10px 16px 24px 0;
-  }
-
-  .step-item {
-    gap: 7px;
-    font-size: 12px;
-  }
-
-  .step-number {
-    width: 28px;
-    height: 28px;
-    flex: 0 0 28px;
-  }
-
-  .main-content {
-    padding-bottom: 40px;
-  }
-
-  .section-badge {
-    gap: 8px;
-    padding: 7px 14px;
-    margin-bottom: 18px;
-  }
-
-  .section-badge-text {
-    font-size: 11px;
-    letter-spacing: 0.1em;
-  }
-
   .card {
     padding: 18px;
     border-radius: 14px;
   }
-
-  .grid-2 {
-    gap: 0;
+  .btn {
+    width: 100%;
+    padding: 0 18px;
   }
-
-  .alert,
-  .demo-alert {
-    flex-direction: column;
-    padding: 16px;
+  .progress-stepper {
+    gap: 22px;
+    padding: 12px 0 22px 0;
   }
-
-  .demo-button,
-  .mobile-full-button {
-    width: 100% !important;
-    height: auto !important;
-    min-height: var(--touch-target);
-    margin-left: 0 !important;
-    padding: 11px 16px !important;
-    white-space: normal;
+  .step-item {
+    font-size: 13px;
   }
-
-  .crop-card-summary {
-    display: grid !important;
-    grid-template-columns: 60px minmax(0, 1fr) 20px;
-    gap: 12px !important;
-    padding: 18px !important;
+  .disclaimer-banner {
+    font-size: 12px;
+    padding: 12px 16px;
   }
-
-  .crop-card-summary .score-circle {
+  .score-circle {
     width: 60px;
     height: 60px;
   }
-
-  .crop-card-summary .score-circle .val {
-    font-size: 21px;
+  .score-circle .val {
+    font-size: 20px;
   }
-
-  .crop-card-main {
-    min-width: 0;
-  }
-
-  .crop-card-main h3[style] {
-    font-size: 20px !important;
-    gap: 7px !important;
-  }
-
-  .crop-card-main .badge {
-    padding: 4px 8px;
-    font-size: 10px;
-  }
-
-  .crop-card-chevron {
-    width: 20px;
-    height: 20px;
-  }
-
-  .crop-card-details {
-    padding: 18px !important;
-  }
-
-  .scenario-tabs {
-    gap: 6px !important;
-    overflow: visible !important;
-  }
-
-  .scenario-tabs .btn {
-    min-width: 0 !important;
-    height: 44px;
-    padding: 0 7px;
-    border-radius: 10px;
-    font-size: 12px;
-  }
-
-  .financial-kpi {
-    padding: 40px 14px !important;
-  }
-
-  .financial-kpi-value {
-    gap: 6px !important;
-    font-size: clamp(2rem, 10vw, 2.5rem) !important;
-  }
-
-  .financial-kpi-value svg {
-    width: 34px;
-    height: 34px;
-  }
-
-  .advisor-card {
-    padding: 18px;
-  }
-
-  .advisor-prompts,
-  .advisor-form,
-  .advisor-reply {
-    margin-left: 0;
-  }
-
-  .advisor-prompts button {
-    flex: 1 1 140px;
-    min-height: 40px;
-  }
-
-  .advisor-form {
-    flex-direction: column;
-  }
-
-  .advisor-form input {
-    min-height: var(--touch-target);
-    font-size: 16px;
-  }
-
-  .advisor-form .btn {
-    width: 100%;
-  }
-
-  .advisor-reply-meta {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .action-plan-toolbar {
-    align-items: stretch !important;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .action-plan-actions {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .action-plan-actions .btn {
-    width: 100%;
-    padding: 0 12px;
-  }
-
-  .printable-plan {
-    padding: 28px 18px !important;
-  }
-
-  .plan-header {
-    padding-bottom: 24px !important;
-    margin-bottom: 30px !important;
-  }
-
-  .plan-header h1[style] {
-    font-size: 30px !important;
-  }
-
-  .plan-meta {
-    flex-wrap: wrap;
-    gap: 4px 10px !important;
-    font-size: 13px !important;
-  }
-
-  .plan-financial-grid {
-    gap: 14px !important;
-  }
-
-  .plan-financial-card {
-    min-width: 0 !important;
-    flex-basis: 100% !important;
-    padding: 20px !important;
-  }
-
-  .disclaimer-banner {
-    margin-left: calc(-1 * max(16px, env(safe-area-inset-left)));
-    margin-right: calc(-1 * max(16px, env(safe-area-inset-right)));
-    padding: 16px max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom));
-    border-radius: 0;
+  .calendar-day {
     font-size: 11px;
+    border-radius: 7px;
   }
-}
-
-@media (min-width: 640px) and (max-width: 1023px) {
-  .app-container {
-    padding-left: max(24px, env(safe-area-inset-left));
-    padding-right: max(24px, env(safe-area-inset-right));
-  }
-
-  .progress-stepper {
-    gap: 22px;
-  }
-
-  .printable-plan {
-    padding: 40px 32px !important;
-  }
-}
-
-@media (hover: none) {
-  .card:hover {
-    box-shadow: var(--shadow-md);
-  }
-
-  .btn-primary:hover {
-    transform: none;
-    filter: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .calendar-legend {
+    gap: 6px 12px;
   }
 }
 

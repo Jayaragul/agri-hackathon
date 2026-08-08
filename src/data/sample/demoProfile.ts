@@ -5,7 +5,7 @@ export const demoProfile: FarmProfile = {
   nitrogenKgPerAcre: 45, // Moderate
   phosphorusKgPerAcre: 30, // Moderate
   potassiumKgPerAcre: 15, // Low (Groundnut needs more)
-  soilType: 'Red Calcareous Soil',
+  soilType: 'Sandy Loam',
   region: 'Coimbatore',
   acres: 2,
   currentMonth: 6, // June is suitable for Kharif Groundnut

@@ -1,5 +1,5 @@
 /* ============================================================
-   THULIR — Design System
+   KRISHI MITRA — Design System
    ============================================================ */
 
 :root {
@@ -71,25 +71,6 @@ body {
   min-height: 100vh;
   line-height: 1.6;
 }
-
-/* Offline AI advisor */
-.advisor-card { margin-top: 32px; padding: 24px; border: 1px solid #bbf7d0; border-radius: var(--radius-lg); background: linear-gradient(145deg, #f0fdf4, #ffffff); box-shadow: var(--shadow-sm); }
-.advisor-heading { display: flex; gap: 14px; align-items: flex-start; }
-.advisor-icon { width: 44px; height: 44px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 13px; color: white; background: linear-gradient(135deg, var(--green-800), var(--green-500)); }
-.advisor-heading h2 { font-size: 21px; color: var(--slate-900); }
-.advisor-heading p { margin-top: 3px; color: var(--slate-600); font-size: 14px; }
-.advisor-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 14px 58px; }
-.advisor-prompts button { border: 1px solid #bbf7d0; background: white; color: var(--green-800); border-radius: 999px; padding: 7px 11px; font-size: 12px; cursor: pointer; }
-.advisor-prompts button:hover { background: var(--green-100); }
-.advisor-form { display: flex; gap: 8px; margin-left: 58px; }
-.advisor-form input { min-width: 0; flex: 1; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); padding: 11px 12px; font: inherit; background: white; }
-.advisor-form .btn { padding: 10px 15px; }
-.advisor-reply { margin: 18px 0 0 58px; padding: 16px; border-radius: var(--radius-md); background: white; border: 1px solid var(--slate-200); }
-.advisor-reply-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; font-weight: 700; color: var(--green-800); text-transform: uppercase; letter-spacing: .04em; }
-.advisor-answer { margin-top: 12px; color: var(--slate-700); font-size: 14px; line-height: 1.65; }
-.advisor-answer p { margin-bottom: 8px; white-space: pre-wrap; }
-.advisor-topics { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--slate-100); color: var(--slate-500); font-size: 11px; }
-@media (max-width: 640px) { .advisor-prompts, .advisor-form, .advisor-reply { margin-left: 0; } }
 
 /* ============================================================
    LAYOUT

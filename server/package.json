@@ -1,0 +1,28 @@
+{
+  "name": "krishi-mitra-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Express backend for Krishi Mitra. Persists session snapshots and calendar chat threads to Google Cloud Storage when configured, falling back to an in-memory store otherwise. See ../catalog.md and deploy/DEPLOY.md.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^7.14.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,4 +1,4 @@
-# HARNESS PLAN: Thulir MVP
+# HARNESS PLAN: Krishi Mitra MVP
 
 ## Existing Project Assessment
 - **Tech Stack**: React 18, TypeScript, Vite, Zustand, Zod, Pure CSS (`globals.css`), Vitest, PWA.

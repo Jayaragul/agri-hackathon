@@ -1,31 +1,24 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import { geminiDevApiPlugin } from './server/geminiDevApiPlugin'
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '')
-  return {
+export default defineConfig({
   plugins: [
     react(),
-    geminiDevApiPlugin({
-      apiKey: env.GEMINI_API_KEY || env.GOOGLE_API_KEY,
-      model: env.GEMINI_MODEL,
-    }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['thulir-logo.png', 'thulir-logo-192.png', 'thulir-logo-512.png'],
+      includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Thulir',
-        short_name: 'Thulir',
+        name: 'Krishi Mitra',
+        short_name: 'KrishiMitra',
         description: 'AI Farm Decision Support for Indian Farmers',
-        theme_color: '#4285F4',
-        background_color: '#FFFFFF',
+        theme_color: '#15803d',
+        background_color: '#f0fdf4',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
-          { src: '/thulir-logo-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/thulir-logo-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
+          { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' }
         ]
       },
       workbox: {
@@ -37,5 +30,4 @@ export default defineConfig(({ mode }) => {
     alias: { '@': '/src' }
   },
   server: { port: 5173 }
-  }
 })

@@ -1,7 +1,7 @@
 import { DatasetMetadata } from '../../domain/models/models'
 
 export const datasetMetadata: DatasetMetadata = {
-  name: 'Thulir Coimbatore Demo Dataset',
+  name: 'Krishi Mitra Coimbatore Demo Dataset',
   version: '0.1.0',
   region: 'Coimbatore, Tamil Nadu',
   sourceType: 'demo',

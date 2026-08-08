@@ -2,18 +2,18 @@ import React, { useMemo } from 'react'
 import { useFarmStore } from '../../state/farmStore'
 import { analyzeSoilGaps } from '../../engine/soilGapAnalysis'
 import { generateFinancialScenarios } from '../../engine/financialEngine'
-import { spreadsheetCorrections } from '../../data/spreadsheetData'
+import { sampleCorrections } from '../../data/sample/corrections'
 import { Printer, Calendar, IndianRupee, Sprout, AlertTriangle } from 'lucide-react'
 
 const PrintableActionPlan: React.FC = () => {
-  const { profile, selectedCrop, reset, recommendations } = useFarmStore()
+  const { profile, selectedCrop, reset, recommendations, setStage } = useFarmStore()
 
   const { analysis, financials } = useMemo(() => {
     if (!profile || !selectedCrop) return { analysis: null, financials: null }
     const rec = recommendations.find(r => r.crop.id === selectedCrop.id)
     if (!rec) return { analysis: null, financials: null }
 
-    const gapAnalysis = analyzeSoilGaps(profile, selectedCrop, spreadsheetCorrections, rec)
+    const gapAnalysis = analyzeSoilGaps(profile, selectedCrop, sampleCorrections, rec)
     const fin = generateFinancialScenarios(profile, selectedCrop, gapAnalysis)
     return { analysis: gapAnalysis, financials: fin.expected }
   }, [profile, selectedCrop, recommendations])
@@ -32,11 +32,14 @@ const PrintableActionPlan: React.FC = () => {
         <span className="section-badge-text">Success Strategy</span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }} className="print-hide action-plan-toolbar">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }} className="print-hide">
         <h2 style={{ margin: 0, lineHeight: 1.2 }}>
           Your <span className="gradient-text gradient-underline">Action Plan</span>
         </h2>
-        <div className="action-plan-actions" style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button className="btn btn-primary" onClick={() => setStage('calendar')}>
+            <Calendar size={18} style={{ marginRight: '8px' }} /> Cultivation Calendar
+          </button>
           <button className="btn btn-outline" onClick={handlePrint}>
             <Printer size={18} style={{ marginRight: '8px' }} /> Print PDF
           </button>
@@ -50,11 +53,11 @@ const PrintableActionPlan: React.FC = () => {
       <div className="printable-plan card" style={{ padding: '48px 40px' }}>
         
         {/* Header */}
-        <div className="plan-header" style={{ textAlign: 'center', borderBottom: '2px solid var(--border)', paddingBottom: '32px', marginBottom: '40px' }}>
+        <div style={{ textAlign: 'center', borderBottom: '2px solid var(--border)', paddingBottom: '32px', marginBottom: '40px' }}>
           <h1 style={{ fontSize: '40px', color: 'var(--foreground)', marginBottom: '16px' }}>
             {selectedCrop.emoji} {selectedCrop.name} Cultivation Plan
           </h1>
-          <div className="plan-meta" style={{ fontSize: '18px', color: 'var(--muted-foreground)', display: 'flex', justifyContent: 'center', gap: '24px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '18px', color: 'var(--muted-foreground)', display: 'flex', justifyContent: 'center', gap: '24px', fontFamily: 'var(--font-mono)' }}>
             <span>{profile.acres} Acres</span>
             <span>•</span>
             <span>{profile.region}</span>
@@ -115,13 +118,13 @@ const PrintableActionPlan: React.FC = () => {
             <IndianRupee size={24} color="var(--accent)" /> Phase 3: Financial Requirements
           </h2>
           
-          <div className="plan-financial-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
-            <div className="plan-financial-card" style={{ flex: 1, minWidth: '240px', background: 'var(--muted)', padding: '24px', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
+            <div style={{ flex: 1, minWidth: '240px', background: 'var(--muted)', padding: '24px', borderRadius: '12px' }}>
               <div style={{ fontSize: '13px', color: 'var(--muted-foreground)', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'var(--font-mono)' }}>Total Investment</div>
               <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--foreground)' }}>₹{Math.round(financials.totalInvestment).toLocaleString()}</div>
             </div>
             
-            <div className="plan-financial-card" style={{ flex: 1, minWidth: '240px', background: financials.isLoss ? 'var(--color-red-50)' : 'var(--color-green-50)', padding: '24px', borderRadius: '12px' }}>
+            <div style={{ flex: 1, minWidth: '240px', background: financials.isLoss ? 'var(--color-red-50)' : 'var(--color-green-50)', padding: '24px', borderRadius: '12px' }}>
               <div style={{ fontSize: '13px', color: financials.isLoss ? 'var(--color-red-700)' : 'var(--color-green-800)', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'var(--font-mono)' }}>Expected Net Profit</div>
               <div style={{ fontSize: '32px', fontWeight: 700, color: financials.isLoss ? 'var(--color-red-700)' : 'var(--color-green-700)' }}>
                 ₹{Math.round(financials.netProfit).toLocaleString()}
@@ -132,7 +135,7 @@ const PrintableActionPlan: React.FC = () => {
 
         {/* Footer Disclaimer */}
         <div style={{ marginTop: '64px', paddingTop: '32px', borderTop: '1px solid var(--border)', fontSize: '13px', color: 'var(--muted-foreground)', textAlign: 'center', lineHeight: 1.6 }}>
-          <strong>Disclaimer:</strong> This plan is generated by the Thulir decision-support system. 
+          <strong>Disclaimer:</strong> This plan is generated by Krishi Mitra AI Decision Support. 
           Cost estimates, yield projections, and pest controls are based on regional averages and predictive models. 
           Always consult a local agricultural extension officer before making final financial commitments.
         </div>

@@ -4,17 +4,6 @@ import { evaluateConfidence } from './confidenceEngine'
 import { DecisionTraceBuilder } from './decisionTraceBuilder'
 import { analyzeNutrient, evaluatePh } from './nutrientAnalysis'
 
-const nutrientMessages = {
-  none: (name: string) => `${name} requirement is fully covered.`,
-  mild: (name: string) => `Small ${name.toLowerCase()} deficit; minor supplementation is recommended.`,
-  moderate: (name: string) => `Moderate ${name.toLowerCase()} deficit; correction is required before sowing.`,
-  severe: (name: string) => `Severe ${name.toLowerCase()} deficit; crop performance is at high risk.`
-} as const
-
-function nutrientMessage(name: string, severity: keyof typeof nutrientMessages): string {
-  return nutrientMessages[severity](name)
-}
-
 export function evaluateCrop(profile: FarmProfile, crop: Crop): RecommendationResult {
   const trace = new DecisionTraceBuilder()
   
@@ -57,19 +46,19 @@ export function evaluateCrop(profile: FarmProfile, crop: Crop): RecommendationRe
   componentScores.nitrogen = nResult.score
   totalScore += nResult.score
   trace.addFactor('nitrogen', profile.nitrogenKgPerAcre, crop.nitrogenRequired, nResult.score, SCORE_WEIGHTS.nitrogen, 
-    nutrientMessage('Nitrogen', nResult.severity))
+    nResult.severity === 'severe' ? 'Severe nitrogen deficit detected.' : 'Nitrogen levels are acceptable.')
 
   const pResult = analyzeNutrient(profile.phosphorusKgPerAcre, crop.phosphorusRequired, SCORE_WEIGHTS.phosphorus)
   componentScores.phosphorus = pResult.score
   totalScore += pResult.score
   trace.addFactor('phosphorus', profile.phosphorusKgPerAcre, crop.phosphorusRequired, pResult.score, SCORE_WEIGHTS.phosphorus, 
-    nutrientMessage('Phosphorus', pResult.severity))
+    pResult.severity === 'severe' ? 'Severe phosphorus deficit detected.' : 'Phosphorus levels are acceptable.')
 
   const kResult = analyzeNutrient(profile.potassiumKgPerAcre, crop.potassiumRequired, SCORE_WEIGHTS.potassium)
   componentScores.potassium = kResult.score
   totalScore += kResult.score
   trace.addFactor('potassium', profile.potassiumKgPerAcre, crop.potassiumRequired, kResult.score, SCORE_WEIGHTS.potassium, 
-    nutrientMessage('Potassium', kResult.severity))
+    kResult.severity === 'severe' ? 'Severe potassium deficit detected.' : 'Potassium levels are acceptable.')
 
   // 4. Soil Type
   const isSoilMatch = crop.compatibleSoilTypes.some(s => s.toLowerCase() === profile.soilType.toLowerCase())
@@ -96,9 +85,8 @@ export function evaluateCrop(profile: FarmProfile, crop: Crop): RecommendationRe
   
   let decisionStatus: RecommendationResult['decisionStatus'] = 'not-currently-feasible'
   const hasCritical = trace.getTrace().some(t => t.status === 'critical')
-  const requiresCorrection = phResult.deviation > 0 || [nResult, pResult, kResult].some(result => result.severity !== 'none')
   
-  if (totalScore >= 80 && !hasCritical && !requiresCorrection) {
+  if (totalScore >= 80 && !hasCritical) {
     decisionStatus = 'recommended'
   } else if (totalScore >= 60 && !hasCritical) {
     decisionStatus = 'recommended-with-corrections'

@@ -127,23 +127,27 @@ export interface ScenarioAssumptions {
   costFactor: number;
 }
 
+/** Itemized cost lines, each already scaled to total acres (not per-acre). Sums to `totalInvestment`. */
+export interface FinancialCostBreakdown {
+  seed: number;
+  fertilizer: number;
+  pesticide: number;
+  irrigation: number;
+  labor: number;
+  machinery: number;
+  postHarvest: number;
+  mandiCharges: number;
+  soilCorrection: number;
+}
+
 export interface FinancialResult {
-  costBreakdown: {
-    seed: number;
-    fertilizer: number;
-    pesticide: number;
-    irrigation: number;
-    labor: number;
-    machinery: number;
-    postHarvest: number;
-    mandiCharges: number;
-    soilCorrection: number;
-  };
   totalCostPerAcre: number;
   totalInvestment: number;
+  costBreakdown: FinancialCostBreakdown;
   grossYieldKg: number;
   saleableYieldKg: number;
   grossRevenue: number;
+  /** The scenario-adjusted market price actually used for `grossRevenue` — avoids the caller back-deriving it via `grossRevenue / saleableYieldKg`, which is fragile at zero yield. */
   effectivePricePerKg: number;
   netProfit: number;
   roi: number;
@@ -179,7 +183,10 @@ export type AppStage =
   | 'soil-corrections'
   | 'financials'
   | 'pests'
-  | 'action-plan';
+  | 'action-plan'
+  | 'calendar'
+  | 'digital-twin'
+  | 'advisor';
 
 export interface ExplanationProvider {
   explainRecommendation(

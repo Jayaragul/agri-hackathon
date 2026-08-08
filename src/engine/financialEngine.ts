@@ -7,25 +7,28 @@ export function calculateScenario(
   assumptions: ScenarioAssumptions
 ): FinancialResult {
   const acres = profile.acres
-  
+
   // Apply assumption factors
   const adjustedYieldPerAcre = crop.averageYieldKgPerAcre * assumptions.yieldFactor
   const adjustedPricePerKg = crop.marketPricePerKg * assumptions.priceFactor
-  
-  const adjustedTotalCost = (costPerAcre: number) => costPerAcre * assumptions.costFactor * acres
+
+  // Itemized cost lines, scaled to total acres. Soil correction is excluded from `costFactor`
+  // (it is a fixed pre-farming quote from the corrections dataset, not a cultivation input that
+  // scales with the scenario's cost overrun/savings assumption).
+  const scaledCost = (costPerAcre: number) => costPerAcre * assumptions.costFactor * acres
   const costBreakdown = {
-    seed: adjustedTotalCost(crop.seedCostPerAcre),
-    fertilizer: adjustedTotalCost(crop.fertilizerCostPerAcre),
-    pesticide: adjustedTotalCost(crop.pesticideCostPerAcre),
-    irrigation: adjustedTotalCost(crop.irrigationCostPerAcre),
-    labor: adjustedTotalCost(crop.laborCostPerAcre),
-    machinery: adjustedTotalCost(crop.machineryCostPerAcre),
-    postHarvest: adjustedTotalCost(crop.postHarvestCostPerAcre),
-    mandiCharges: adjustedTotalCost(crop.mandiChargesPerAcre),
-    soilCorrection: acres > 0 ? gapAnalysis.totalCorrectionCost : 0
+    seed: scaledCost(crop.seedCostPerAcre),
+    fertilizer: scaledCost(crop.fertilizerCostPerAcre),
+    pesticide: scaledCost(crop.pesticideCostPerAcre),
+    irrigation: scaledCost(crop.irrigationCostPerAcre),
+    labor: scaledCost(crop.laborCostPerAcre),
+    machinery: scaledCost(crop.machineryCostPerAcre),
+    postHarvest: scaledCost(crop.postHarvestCostPerAcre),
+    mandiCharges: scaledCost(crop.mandiChargesPerAcre),
+    soilCorrection: gapAnalysis.totalCorrectionCost,
   }
 
-  const totalInvestment = Object.values(costBreakdown).reduce((total, cost) => total + cost, 0)
+  const totalInvestment = Object.values(costBreakdown).reduce((sum, cost) => sum + cost, 0)
   const totalCostPerAcre = acres > 0 ? totalInvestment / acres : 0
 
   const grossYieldKg = adjustedYieldPerAcre * acres
@@ -46,9 +49,9 @@ export function calculateScenario(
   const breakEvenPricePerKg = saleableYieldKg > 0 ? totalInvestment / saleableYieldKg : 0
 
   return {
-    costBreakdown,
     totalCostPerAcre,
     totalInvestment,
+    costBreakdown,
     grossYieldKg,
     saleableYieldKg,
     grossRevenue,

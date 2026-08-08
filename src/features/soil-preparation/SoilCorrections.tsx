@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useFarmStore } from '../../state/farmStore'
 import { analyzeSoilGaps } from '../../engine/soilGapAnalysis'
 import { SoilGapAnalysisResult, RecommendationResult } from '../../domain/models/models'
-import { spreadsheetCorrections } from '../../data/spreadsheetData'
+import { sampleCorrections } from '../../data/sample/corrections'
 import { AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react'
 
 const SoilCorrections: React.FC = () => {
@@ -14,7 +14,7 @@ const SoilCorrections: React.FC = () => {
       // Find the specific recommendation result for this crop
       const rec = recommendations.find(r => r.crop.id === selectedCrop.id)
       if (rec) {
-        setAnalysis(analyzeSoilGaps(profile, selectedCrop, spreadsheetCorrections, rec))
+        setAnalysis(analyzeSoilGaps(profile, selectedCrop, sampleCorrections, rec))
       }
     }
   }, [profile, selectedCrop, recommendations])
@@ -110,7 +110,7 @@ const SoilCorrections: React.FC = () => {
         </>
       )}
 
-      <button className="btn btn-primary mobile-full-button" onClick={() => setStage('financials')} style={{ width: 'auto' }}>
+      <button className="btn btn-primary" onClick={() => setStage('financials')} style={{ width: 'auto' }}>
         View Profitability Forecast <ArrowRight size={18} />
       </button>
     </div>

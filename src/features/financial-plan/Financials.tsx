@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { useFarmStore } from '../../state/farmStore'
 import { analyzeSoilGaps } from '../../engine/soilGapAnalysis'
 import { generateFinancialScenarios } from '../../engine/financialEngine'
-import { spreadsheetCorrections } from '../../data/spreadsheetData'
+import { sampleCorrections } from '../../data/sample/corrections'
 import { ArrowRight, IndianRupee, TrendingUp, TrendingDown, Info } from 'lucide-react'
 
 const Financials: React.FC = () => {
@@ -14,7 +14,7 @@ const Financials: React.FC = () => {
     const rec = recommendations.find(r => r.crop.id === selectedCrop.id)
     if (!rec) return { analysis: null, financials: null }
 
-    const gapAnalysis = analyzeSoilGaps(profile, selectedCrop, spreadsheetCorrections, rec)
+    const gapAnalysis = analyzeSoilGaps(profile, selectedCrop, sampleCorrections, rec)
     const fin = generateFinancialScenarios(profile, selectedCrop, gapAnalysis)
     return { analysis: gapAnalysis, financials: fin }
   }, [profile, selectedCrop, recommendations])
@@ -22,13 +22,6 @@ const Financials: React.FC = () => {
   if (!profile || !selectedCrop || !analysis || !financials) return <div>Loading financials...</div>
 
   const activeScenario = financials[activeTab]
-  const costRows = [
-    ['Soil Correction', activeScenario.costBreakdown.soilCorrection],
-    ['Seed & Fertilizer', activeScenario.costBreakdown.seed + activeScenario.costBreakdown.fertilizer],
-    ['Labor & Operations', activeScenario.costBreakdown.labor + activeScenario.costBreakdown.irrigation + activeScenario.costBreakdown.machinery],
-    ['Crop Protection', activeScenario.costBreakdown.pesticide],
-    ['Post-harvest & Mandi', activeScenario.costBreakdown.postHarvest + activeScenario.costBreakdown.mandiCharges]
-  ] as const
 
   return (
     <div>
@@ -45,7 +38,7 @@ const Financials: React.FC = () => {
       </p>
 
       {/* Scenario Tabs */}
-      <div className="scenario-tabs" style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '4px' }}>
         <button 
           className={`btn ${activeTab === 'conservative' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ flex: 1, minWidth: '140px' }}
@@ -70,11 +63,11 @@ const Financials: React.FC = () => {
       </div>
 
       {/* Main KPI - Inverted Design */}
-      <div className={`card financial-kpi ${activeScenario.isLoss ? 'bg-inverted' : 'bg-inverted texture-dots'}`} style={{ textAlign: 'center', padding: '64px 24px', border: 'none', background: activeScenario.isLoss ? 'var(--color-red-700)' : 'var(--foreground)' }}>
+      <div className={`card ${activeScenario.isLoss ? 'bg-inverted' : 'bg-inverted texture-dots'}`} style={{ textAlign: 'center', padding: '64px 24px', border: 'none', background: activeScenario.isLoss ? 'var(--color-red-700)' : 'var(--foreground)' }}>
         <div style={{ fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px', color: 'var(--muted-foreground)', fontFamily: 'var(--font-mono)' }}>
           Estimated Net Profit
         </div>
-        <div className="financial-kpi-value" style={{ fontSize: '56px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'white', fontFamily: 'var(--font-display)' }}>
+        <div style={{ fontSize: '56px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'white', fontFamily: 'var(--font-display)' }}>
           <IndianRupee size={48} />
           {Math.abs(Math.round(activeScenario.netProfit)).toLocaleString()}
         </div>
@@ -95,12 +88,22 @@ const Financials: React.FC = () => {
             <span style={{ color: 'var(--muted-foreground)', fontSize: '16px' }}>Total Investment</span>
             <strong style={{ fontSize: '20px' }}>₹{Math.round(activeScenario.totalInvestment).toLocaleString()}</strong>
           </div>
-          {costRows.map(([label, cost], index) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: index === costRows.length - 1 ? 0 : '16px', fontSize: '15px', color: 'var(--foreground)' }}>
-              <span>{label}</span>
-              <span style={{ fontFamily: 'var(--font-mono)' }}>₹{Math.round(cost).toLocaleString('en-IN')}</span>
-            </div>
-          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '15px', color: 'var(--foreground)' }}>
+            <span>Soil Correction</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>₹{Math.round(activeScenario.costBreakdown.soilCorrection).toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '15px', color: 'var(--foreground)' }}>
+            <span>Seed & Fertilizer</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>₹{Math.round(activeScenario.costBreakdown.seed + activeScenario.costBreakdown.fertilizer).toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '15px', color: 'var(--foreground)' }}>
+            <span>Pesticide</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>₹{Math.round(activeScenario.costBreakdown.pesticide).toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', color: 'var(--foreground)' }}>
+            <span>Labor, Irrigation & Machinery</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>₹{Math.round(activeScenario.costBreakdown.labor + activeScenario.costBreakdown.irrigation + activeScenario.costBreakdown.machinery).toLocaleString()}</span>
+          </div>
         </div>
 
         <div className="card" style={{ marginBottom: 0 }}>
@@ -130,7 +133,7 @@ const Financials: React.FC = () => {
         </div>
       </div>
 
-      <button className="btn btn-primary mobile-full-button" onClick={() => setStage('pests')} style={{ marginTop: '24px', width: 'auto' }}>
+      <button className="btn btn-primary" onClick={() => setStage('pests')} style={{ marginTop: '24px', width: 'auto' }}>
         Review Pest Risks <ArrowRight size={18} />
       </button>
     </div>

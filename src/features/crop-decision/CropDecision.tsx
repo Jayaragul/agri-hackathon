@@ -4,7 +4,8 @@ import { rankCrops } from '../../engine/recommendationEngine'
 import { analyzeSoilGaps } from '../../engine/soilGapAnalysis'
 import { LocalTemplateExplanationProvider } from '../../services/explanation/LocalTemplateExplanationProvider'
 import { RecommendationResult, SoilGapAnalysisResult } from '../../domain/models/models'
-import { spreadsheetCrops, spreadsheetCorrections } from '../../data/spreadsheetData'
+import { sampleCrops } from '../../data/sample/crops'
+import { sampleCorrections } from '../../data/sample/corrections'
 import { ChevronRight, ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react'
 
 const CropDecision: React.FC = () => {
@@ -15,11 +16,11 @@ const CropDecision: React.FC = () => {
 
   useEffect(() => {
     if (profile) {
-      const recs = rankCrops(profile, spreadsheetCrops)
+      const recs = rankCrops(profile, sampleCrops)
       setRecommendations(recs)
       const combined = recs.map(r => ({
         result: r,
-        gap: analyzeSoilGaps(profile, r.crop, spreadsheetCorrections, r)
+        gap: analyzeSoilGaps(profile, r.crop, sampleCorrections, r)
       }))
       setResults(combined)
       
@@ -65,8 +66,7 @@ const CropDecision: React.FC = () => {
         return (
           <div key={crop.id} className={isTopMatch ? 'card-featured' : ''} style={{ marginBottom: '20px' }}>
             <div className={isTopMatch ? 'card-featured-inner' : 'card'} style={{ padding: 0, overflow: 'hidden', border: isTopMatch ? 'none' : '' }}>
-              <div
-                className="crop-card-summary"
+              <div 
                 style={{ 
                   padding: '24px', 
                   display: 'flex', 
@@ -83,7 +83,7 @@ const CropDecision: React.FC = () => {
                   <span className="lbl">Match</span>
                 </div>
                 
-                <div className="crop-card-main" style={{ flex: 1 }}>
+                <div style={{ flex: 1 }}>
                   <h3 style={{ fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {crop.emoji} {crop.name}
                   </h3>
@@ -104,11 +104,11 @@ const CropDecision: React.FC = () => {
                   </div>
                 </div>
                 
-                <ChevronRight className="crop-card-chevron" style={{ transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', color: 'var(--muted-foreground)' }} />
+                <ChevronRight style={{ transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', color: 'var(--muted-foreground)' }} />
               </div>
 
               {isExpanded && (
-                <div className="crop-card-details" style={{ padding: '24px', borderTop: '1px solid var(--border)' }}>
+                <div style={{ padding: '24px', borderTop: '1px solid var(--border)' }}>
                   <div style={{ whiteSpace: 'pre-wrap', fontSize: '15px', lineHeight: 1.7, color: 'var(--foreground)', marginBottom: '32px' }}>
                     {explanations[crop.id]?.split('\n').map((line, i) => {
                       if (line.startsWith('**')) return <strong key={i} style={{ display: 'block', marginTop: '16px', marginBottom: '8px', color: 'var(--primary)'}}>{line.replace(/\*\*/g, '')}</strong>;
@@ -136,7 +136,7 @@ const CropDecision: React.FC = () => {
 
                   {decisionStatus !== 'not-currently-feasible' && (
                     <button 
-                    className="btn btn-primary mobile-full-button" 
+                      className="btn btn-primary"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedCrop(crop);

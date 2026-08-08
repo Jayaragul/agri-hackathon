@@ -1,11 +1,28 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useFarmStore } from '../../state/farmStore'
 import { FarmProfileSchema } from '../../domain/schemas/schemas'
-import { ArrowRight } from 'lucide-react'
+import { getSessionStorage } from '../../services/storage'
+import type { FarmProfile } from '../../domain/models/models'
+import { ArrowRight, History } from 'lucide-react'
 
 const FarmProfileForm: React.FC = () => {
   const { profile, setProfile, loadDemoProfile } = useFarmStore()
-  
+  const [savedProfile, setSavedProfile] = useState<FarmProfile | null>(null)
+
+  useEffect(() => {
+    if (profile) return
+    let cancelled = false
+    getSessionStorage()
+      .loadSnapshot()
+      .then((snapshot) => {
+        if (!cancelled && snapshot?.farmProfile) setSavedProfile(snapshot.farmProfile)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [profile])
+
   const [formData, setFormData] = useState({
     ph: profile?.ph?.toString() || '',
     nitrogenKgPerAcre: profile?.nitrogenKgPerAcre?.toString() || '',
@@ -67,7 +84,25 @@ const FarmProfileForm: React.FC = () => {
       </h2>
 
       <div className="card">
-        <div className="alert alert-info demo-alert">
+        {savedProfile && (
+          <div className="alert alert-info">
+            <div>
+              <div className="alert-title">Welcome back</div>
+              <div className="alert-desc">
+                We found your last farm profile on this device. Resume it instead of typing it in again?
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ padding: '0 16px', height: '36px', fontSize: '14px', marginLeft: 'auto' }}
+              onClick={() => setProfile(savedProfile)}
+            >
+              <History size={14} style={{ marginRight: '6px' }} /> Resume
+            </button>
+          </div>
+        )}
+        <div className="alert alert-info">
           <div>
             <div className="alert-title">Demo Mode Available</div>
             <div className="alert-desc">
@@ -76,7 +111,7 @@ const FarmProfileForm: React.FC = () => {
           </div>
           <button 
             type="button" 
-            className="btn btn-secondary demo-button" 
+            className="btn btn-secondary" 
             style={{ padding: '0 16px', height: '36px', fontSize: '14px', marginLeft: 'auto' }}
             onClick={loadDemoProfile}
           >
@@ -164,15 +199,12 @@ const FarmProfileForm: React.FC = () => {
                 onChange={handleChange}
               >
                 <option value="">Select soil type...</option>
-                <option value="Red Calcareous Soil">Red Calcareous Soil</option>
+                <option value="Red Soil">Red Soil</option>
                 <option value="Black Soil">Black Soil</option>
-                <option value="Alluvial and Colluvial Soil">Alluvial and Colluvial Soil</option>
-                <option value="Red Non-Calcareous Soil">Red Non-Calcareous Soil</option>
-                <option value="Forest Soil">Forest Soil</option>
-                <option value="Irugur Series">Irugur Series</option>
-                <option value="Palladam Series">Palladam Series</option>
-                <option value="Somayanur Series">Somayanur Series</option>
-                <option value="Brown Soil">Brown Soil</option>
+                <option value="Sandy Loam">Sandy Loam</option>
+                <option value="Heavy Clay">Heavy Clay</option>
+                <option value="Light Black Soil">Light Black Soil</option>
+                <option value="Red Calcareous Soil">Red Calcareous Soil</option>
               </select>
               {errors.soilType && <span className="hint" style={{color: 'red'}}>{errors.soilType}</span>}
             </div>
@@ -237,7 +269,7 @@ const FarmProfileForm: React.FC = () => {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary mobile-full-button" style={{ marginTop: '24px', width: 'auto' }}>
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '24px', width: 'auto' }}>
             Get Crop Recommendations <ArrowRight size={18} />
           </button>
         </form>
