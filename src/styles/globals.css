@@ -756,12 +756,18 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 
 /* Scrollable message history — real conversation memory the farmer can see, not just the latest
    answer. Bubbles are alignment/color mirrors of FarmAdvisor.tsx's light-theme pattern, redone
-   in this screen's own dark, translucent-white / violet-gradient vocabulary. */
+   in this screen's own dark, translucent-white / violet-gradient vocabulary.
+   Deliberately a BOUNDED max-height with its own scrollbar, not `flex: 1` — `.voice-shell` sits
+   in the app's normal page flow (below a sticky header, above the disclaimer footer), not in a
+   height-clamped viewport, so a flexed-to-fill transcript has no real ceiling and just grows the
+   whole page taller as the conversation gets longer, pushing the mic/compose bar further down
+   with every turn. Capping it here keeps the mic and compose bar within reach regardless of how
+   long the conversation gets — only the transcript itself scrolls. */
 .voice-transcript {
   width: 100%;
   max-width: 480px;
-  flex: 1;
-  min-height: 0;
+  min-height: 64px;
+  max-height: 38vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -962,7 +968,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 @media (max-width: 480px) {
   .voice-shell { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
   .voice-top-bubble { max-width: 100%; }
-  .voice-transcript { max-width: 100%; }
+  .voice-transcript { max-width: 100%; max-height: 32vh; }
   .voice-hero { max-width: 100%; gap: 20px; }
   .voice-mic-standalone { width: 84px; height: 84px; }
   .voice-msg { max-width: 90%; font-size: 13px; }
@@ -974,6 +980,30 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   .voice-mic-standalone { width: 76px; height: 76px; }
   .voice-waveform-wrap { height: 52px; gap: 5px; }
   .voice-greeting { margin-bottom: 12px; }
+}
+
+@media (max-width: 340px) {
+  .voice-shell { padding-left: 12px; padding-right: 12px; }
+  .voice-top-bubble { padding-left: 14px; }
+  .voice-top-bubble input { font-size: 13px; }
+  .voice-send-circle { width: 40px; height: 40px; }
+  .voice-mic-standalone { width: 68px; height: 68px; }
+  .voice-lab-report-btn span { display: none; }
+}
+
+/* Short-viewport phones (landscape, or a small screen behind an on-screen nav bar) — the
+   transcript is the one element with real room to give up before the mic/compose bar get
+   cramped or clipped below the fold. */
+@media (max-height: 700px) {
+  .voice-transcript { max-height: 24vh; }
+  .voice-hero { gap: 14px; }
+  .voice-mic-standalone { animation-duration: 2.6s; }
+}
+
+@media (max-height: 560px) {
+  .voice-transcript { max-height: 18vh; }
+  .voice-mic-standalone { width: 64px; height: 64px; }
+  .voice-waveform-wrap { height: 40px; }
 }
 
 /* Action Plan Printing */

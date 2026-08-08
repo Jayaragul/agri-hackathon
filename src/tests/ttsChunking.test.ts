@@ -45,7 +45,7 @@ describe("chunkTextForTts", () => {
     expect(chunks.join(" ")).toBe(text);
   });
 
-  it("preserves the real over-500-character knowledge-base answer without dropping content", () => {
+  it("fits a real ~700-character knowledge-base answer in a single chunk under bulbul:v3's higher limit", () => {
     const longAnswer =
       "Soil pH is the single most important soil factor because it controls nutrient availability. " +
       "Below 5.0, aluminum and manganese become toxic and most crops fail. Between 5.5 and 7.0 is the optimal zone " +
@@ -54,9 +54,25 @@ describe("chunkTextForTts", () => {
       "add gypsum along with a green manure crop such as Dhaincha. In Coimbatore, red calcareous soils often sit " +
       "at pH 7.5 to 8.0, so watch closely for micronutrient deficiencies through the season.";
     expect(longAnswer.length).toBeGreaterThan(500);
+    expect(longAnswer.length).toBeLessThan(2000);
+    // Default MAX_CHARS is now bulbul:v3's real headroom, not the older 500-char batch-request
+    // limit — a farmer no longer waits through multiple round-trips for an answer this length.
+    expect(chunkTextForTts(longAnswer)).toEqual([longAnswer]);
+  });
+
+  it("still chunks an answer that genuinely exceeds the default limit, without dropping content", () => {
+    const paragraph =
+      "Soil pH is the single most important soil factor because it controls nutrient availability. " +
+      "Below 5.0, aluminum and manganese become toxic and most crops fail. Between 5.5 and 7.0 is the optimal zone " +
+      "for most crops, with maximum nutrient availability. Above 8.0, iron, zinc, manganese and phosphorus all " +
+      "become locked up. To fix an acidic soil, add lime at two to four tonnes per acre. To fix an alkaline soil, " +
+      "add gypsum along with a green manure crop such as Dhaincha. In Coimbatore, red calcareous soils often sit " +
+      "at pH 7.5 to 8.0, so watch closely for micronutrient deficiencies through the season. ";
+    const longAnswer = paragraph.repeat(4).trim();
+    expect(longAnswer.length).toBeGreaterThan(2000);
     const chunks = chunkTextForTts(longAnswer);
     expect(chunks.length).toBeGreaterThan(1);
-    expect(chunks.every((c) => c.length <= 500)).toBe(true);
+    expect(chunks.every((c) => c.length <= 2000)).toBe(true);
     expect(chunks.join(" ")).toBe(longAnswer);
   });
 });

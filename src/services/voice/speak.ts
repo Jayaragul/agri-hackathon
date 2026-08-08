@@ -3,9 +3,9 @@
  * `OnboardingGate.tsx` both use instead of calling `sarvamClient.synthesizeSpeech()` directly.
  * Two responsibilities neither caller should have to reimplement:
  *
- * 1. Chunks the text under Sarvam's 500-character-per-call limit (`ttsChunking.ts`) and plays
- *    each clip back-to-back, so a long knowledge-base answer is still spoken in full instead of
- *    being rejected outright.
+ * 1. Chunks the text under Sarvam bulbul:v3's per-call character limit (`ttsChunking.ts`) and
+ *    plays each clip back-to-back, so a long knowledge-base answer is still spoken in full
+ *    instead of being rejected outright.
  * 2. Never throws. Speech is a bonus on top of an answer that already succeeded and is already
  *    on screen — a synthesis failure (quota, network, an unexpected format) should never look
  *    like the answer itself failed. Playback simply stops at whichever chunk failed.

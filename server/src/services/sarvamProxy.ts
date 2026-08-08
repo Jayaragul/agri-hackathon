@@ -15,7 +15,8 @@ const MAX_ERROR_BODY_CHARS = 300;
 const STT_MODEL = "saaras:v3";
 const TTS_MODEL = "bulbul:v3";
 const TTS_SPEAKER = "mani";
-const TTS_SAMPLE_RATE = 16000;
+/** bulbul:v3's own documented default — confirmed against docs.sarvam.ai/api-reference/text-to-speech/convert. */
+const TTS_SAMPLE_RATE = 24000;
 
 export class SarvamProxyError extends Error {
   constructor(
@@ -85,7 +86,16 @@ export async function speechToText(
   return (payload.transcript ?? "").trim();
 }
 
-/** Speak one reply back. Returns a base64-encoded WAV clip ready for an `<audio>` data URI on the frontend. */
+/**
+ * Speak one reply back. Returns a base64-encoded WAV clip ready for an `<audio>` data URI on the
+ * frontend.
+ *
+ * Request shape confirmed against `docs.sarvam.ai/api-reference/text-to-speech/convert`
+ * (2026-08): `bulbul:v3` takes a single `text` string (up to 2500 chars) and `language_code` —
+ * NOT the `inputs: string[]` / `target_language_code` shape this previously sent, which is the
+ * older `bulbul:v1`/`v2` batch-synthesis request format. `enable_preprocessing`, `pitch`, and
+ * `loudness` are all explicitly "not supported" for v3 per the same docs, so none are sent here.
+ */
 export async function textToSpeech(
   apiKey: string,
   text: string,
@@ -99,12 +109,11 @@ export async function textToSpeech(
     method: "POST",
     headers: { "api-subscription-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      inputs: [text],
-      target_language_code: languageCode,
+      text,
+      language_code: languageCode,
       speaker: TTS_SPEAKER,
       pace: 1.0,
       speech_sample_rate: TTS_SAMPLE_RATE,
-      enable_preprocessing: true,
       model: TTS_MODEL,
     }),
   });

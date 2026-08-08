@@ -57,8 +57,13 @@ describe("textToSpeech", () => {
     expect(audio).toBe("base64wav");
     const [, init] = vi.mocked(fetchMock).mock.calls[0];
     const body = JSON.parse(init?.body as string);
-    expect(body.inputs).toEqual(["vanakkam"]);
-    expect(body.target_language_code).toBe("ta-IN");
+    expect(body.text).toBe("vanakkam");
+    expect(body.language_code).toBe("ta-IN");
+    expect(body.model).toBe("bulbul:v3");
+    // v3-unsupported fields from the old batch-request shape must never be sent.
+    expect(body.inputs).toBeUndefined();
+    expect(body.target_language_code).toBeUndefined();
+    expect(body.enable_preprocessing).toBeUndefined();
   });
 
   it("rejects an empty audios array from the provider", async () => {

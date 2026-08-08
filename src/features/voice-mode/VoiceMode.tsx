@@ -84,9 +84,10 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
         disabled={labReportStatus === 'uploading'}
         onClick={() => labReportInputRef.current?.click()}
         title="Add a photo of your soil test / lab report"
+        aria-label="Add a photo of your soil test / lab report"
       >
         {labReportStatus === 'uploading' ? <Loader2 size={14} className="spin" /> : <FileText size={14} />}
-        Lab report
+        <span>Lab report</span>
       </button>
 
       <div style={{ width: '100%', maxWidth: '480px', display: 'flex', justifyContent: 'center', paddingTop: '8px', marginBottom: '20px' }}>
