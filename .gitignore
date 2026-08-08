@@ -1,0 +1,13 @@
+.vercel
+
+# Dependencies & build output
+node_modules
+dist
+server/node_modules
+server/dist
+
+# Environment secrets — see .env.example for the template that IS committed
+.env
+.env.local
+.env.*.local
+
