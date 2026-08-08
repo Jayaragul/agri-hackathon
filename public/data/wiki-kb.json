@@ -1,0 +1,128 @@
+[
+  {
+    "id": "what_is_npk",
+    "keywords": ["npk", "nitrogen", "phosphorus", "potassium", "fertilizer", "macronutrient"],
+    "question": "What is NPK and why does it matter?",
+    "answer": "NPK stands for Nitrogen (N), Phosphorus (P), and Potassium (K) — the three primary macronutrients every crop needs.\n\n🟢 **Nitrogen (N):** Drives leaf and stem growth (green color). Deficiency = yellow leaves.\n🟡 **Phosphorus (P):** Essential for root development and flowering. Deficiency = purple-tinged leaves, poor roots.\n🔴 **Potassium (K):** Controls water movement, disease resistance, and grain/fruit quality. Deficiency = scorched leaf edges.\n\nFor Coimbatore soils, always start with biofertilizers (Azospirillum for N, PSB for P, KMB for K) before applying chemical fertilizers. This reduces input cost by 25-30%."
+  },
+  {
+    "id": "what_is_azospirillum",
+    "keywords": ["azospirillum", "biofertilizer", "nitrogen fixing", "biological nitrogen"],
+    "question": "How does Azospirillum work?",
+    "answer": "Azospirillum is a free-living nitrogen-fixing bacteria that lives in the root zone (rhizosphere) of plants.\n\n🌿 **How it works:** It captures atmospheric nitrogen (N₂) from the air and converts it into ammonia (NH₃) that plants can absorb.\n\n💰 **Economic benefit:** One application of Azospirillum (2 kg/acre) can fix 20-40 kg of nitrogen per hectare — equivalent to 44-87 kg of Urea. Saves ₹1,000-1,500 per acre.\n\n✅ **How to use:** Mix 500g of Azospirillum in 100mL water. Dip seedling roots for 30 minutes before transplanting. For direct sowing, treat seeds and dry in shade before sowing.\n\n📍 Recommended for: Rice, Maize, Sugarcane, Wheat, Millets, Vegetables."
+  },
+  {
+    "id": "what_is_psb",
+    "keywords": ["psb", "phosphate solubilizing", "phosphorus bacteria", "phosphobacteria"],
+    "question": "What is PSB (Phosphate Solubilizing Bacteria)?",
+    "answer": "PSB are beneficial bacteria that dissolve (solubilize) locked phosphorus in soil, making it available for plants.\n\n🔬 **The problem:** In alkaline soils (pH > 7.5), phosphorus binds to calcium and becomes unavailable. In acidic soils (pH < 5.5), it binds to iron and aluminium.\n\n🌱 **PSB solution:** Bacteria like Bacillus megaterium and Pseudomonas striata produce organic acids that break these bonds, releasing phosphorus.\n\n💰 **Cost saving:** PSB can mobilize phosphorus equivalent to 25 kg/acre of DAP fertilizer. That's ₹700-900 saved per acre.\n\n✅ **Application:** Apply 2 kg/acre as soil drench OR mix with FYM and broadcast. Can also be used as seed treatment (3g/kg seed)."
+  },
+  {
+    "id": "what_is_ipm",
+    "keywords": ["ipm", "integrated pest management", "pest management", "biocontrol"],
+    "question": "What is IPM (Integrated Pest Management)?",
+    "answer": "IPM is a smart, eco-friendly approach to pest control that uses multiple strategies in the correct order:\n\n1️⃣ **Cultural control** (first): Crop rotation, resistant varieties, proper spacing, field sanitation\n2️⃣ **Mechanical control** (second): Sticky traps, light traps, pheromone traps, hand-picking\n3️⃣ **Biological control** (third): Natural enemies — Trichogramma, Chrysoperma, Bacillus thuringiensis (Bt)\n4️⃣ **Chemical control** (LAST resort): Only when pest crosses Economic Threshold Level (ETL)\n\n💡 **Economic Threshold Level (ETL):** The pest population at which the cost of crop damage EXCEEDS the cost of control. Below ETL = don't spray! You're wasting money.\n\n🌿 Thulir always recommends biological solutions first. Chemicals are Plan B."
+  },
+  {
+    "id": "ph_importance",
+    "keywords": ["ph", "soil ph", "acidity", "alkalinity", "lime", "acidic", "alkaline"],
+    "question": "Why is soil pH so important for farming?",
+    "answer": "Soil pH is the single most important soil factor because it controls nutrient availability.\n\n📊 **pH scale:** 0-14. Below 7 = Acidic. 7 = Neutral. Above 7 = Alkaline.\n\n⚠️ **Critical zones:**\n- pH < 5.0: Aluminum and manganese toxicity. Iron and zinc unavailable. Most crops fail.\n- pH 5.5-7.0: OPTIMAL zone for most crops. Maximum nutrient availability.\n- pH > 8.0: Iron, zinc, manganese, phosphorus all locked. Calcium carbonate dominates.\n\n🔧 **How to fix:**\n- Too acidic (low pH)? Add **lime** (calcium carbonate) — 2-4 tonnes/acre\n- Too alkaline (high pH)? Add **gypsum** (calcium sulphate) + **green manure** (Dhaincha)\n\n📍 In Coimbatore: Red calcareous soils often have pH 7.5-8.0 — watch for micronutrient deficiencies!"
+  },
+  {
+    "id": "vermicompost",
+    "keywords": ["vermicompost", "earthworm", "organic fertilizer", "compost", "organic matter"],
+    "question": "How does vermicompost improve soil?",
+    "answer": "Vermicompost (earthworm compost) is one of the most powerful natural soil amendments available.\n\n🌟 **Benefits:**\n- Contains NPK in plant-available form: N(1.5%), P(0.8%), K(1.5%)\n- Rich in growth hormones (auxins, gibberellins) that boost root development\n- Improves soil water retention by 30-40%\n- Introduces beneficial microorganisms\n- pH buffering effect — moderates both acid and alkaline extremes\n\n💰 **Economics:** 1 tonne of vermicompost (₹3,000-4,000) replaces ₹5,000-6,000 worth of chemical fertilizers and improves soil health long-term.\n\n✅ **Application rate:** 2-4 tonnes/acre. Apply as basal dose at sowing/planting.\n\n📍 Especially effective on Coimbatore's Somayanur series soils and Irugur series for improving organic carbon."
+  },
+  {
+    "id": "green_manure",
+    "keywords": ["green manure", "dhaincha", "sunhemp", "cowpea", "sesbania", "nitrogen fixation"],
+    "question": "What is green manure and which crops to use?",
+    "answer": "Green manure means growing a fast-growing legume crop, then ploughing it into the soil while still green.\n\n🌿 **Best green manure crops for Tamil Nadu:**\n- **Dhaincha (Sesbania bispinosa):** Fastest. Grows 1-1.5m in 45 days. Fixes 80-120 kg N/ha. Also lowers soil pH in alkaline soils.\n- **Sunhemp (Crotalaria juncea):** Good biomass. Fixes 100-150 kg N/ha.\n- **Cowpea:** Dual purpose — green manure + food crop.\n\n💡 **How to use:**\n1. Sow green manure crop 45 days before main crop\n2. Plough in at flowering stage (before seeds form)\n3. Allow 2 weeks decomposition before sowing main crop\n\n💰 **Savings:** Reduces Urea requirement by 30-50 kg/acre. Saves ₹900-1,500/acre in fertilizer cost + improves soil structure."
+  },
+  {
+    "id": "kharif_rabi_zaid",
+    "keywords": ["kharif", "rabi", "zaid", "season", "season crop", "sowing season"],
+    "question": "What are Kharif, Rabi, and Zaid seasons?",
+    "answer": "India has three main cropping seasons based on monsoon and temperature:\n\n☀️ **Kharif (June - September):**\n- Sown at onset of Southwest Monsoon\n- Rain-fed crops mostly\n- Main crops: Rice, Maize, Cotton, Groundnut, Sorghum, Bajra (Cumbu)\n- Harvested: October-November\n\n❄️ **Rabi (October - January):**\n- Sown after monsoon, uses residual moisture + irrigation\n- Cool-season crops\n- Main crops: Wheat, Oats, Maize (second crop), Pulses, Vegetables\n- Harvested: March-April\n\n🌸 **Zaid (February - May):**\n- Short summer season between Rabi and Kharif\n- Irrigation-dependent crops\n- Main crops: Groundnut, Vegetables, Watermelon, Cucumber\n- Harvested: May-June\n\n📍 For Coimbatore: Kharif is the main season (June-September monsoon). August planting = Kharif season."
+  },
+  {
+    "id": "drip_irrigation",
+    "keywords": ["drip", "drip irrigation", "fertigation", "water saving", "irrigation"],
+    "question": "What is drip irrigation and fertigation?",
+    "answer": "Drip irrigation delivers water directly to the root zone of each plant through a network of tubes and emitters.\n\n💧 **Water savings:** 40-50% less water vs. flood irrigation. Critical in water-scarce Coimbatore.\n\n🌱 **Fertigation:** Mixing liquid fertilizers into the drip water and delivering them precisely to roots. Benefits:\n- 30% less fertilizer required\n- Zero nutrient leaching below root zone\n- Can apply water-soluble nutrients (K, Ca, Mg) that are otherwise unavailable in alkaline soils\n- Even application across entire field\n\n💰 **Economics:**\n- Setup cost: ₹25,000-40,000/acre\n- Government subsidy: 50-90% under TNAU/PMKSY schemes\n- Break-even: Usually in 2-3 seasons through water + fertilizer savings\n\n📍 Especially recommended for Coimbatore's horticulture crops (Tomato, Banana, Chilli) where Iron and Zinc deficiency is common due to alkaline soil."
+  },
+  {
+    "id": "crop_rotation",
+    "keywords": ["crop rotation", "rotation", "intercrop", "fallow"],
+    "question": "Why is crop rotation important?",
+    "answer": "Crop rotation is the practice of growing different crops sequentially on the same land across seasons.\n\n🔄 **Classic Coimbatore rotation:** Cotton → Groundnut → Paddy (or) Maize → Pulses → Maize\n\n🌿 **Benefits:**\n1. **Nitrogen replenishment:** Follow cereal (Rice, Maize) with legume (Groundnut, Pulses) — legumes fix 60-120 kg N/ha FREE\n2. **Pest break:** Most pests are crop-specific. Rotation disrupts life cycles without pesticides.\n3. **Weed control:** Different crops suppress different weeds\n4. **Soil health:** Different root depths improve soil structure\n5. **Economic:** Diversified income reduces market risk\n\n💡 **Golden rule:** Never grow the same crop or same family two seasons in a row on the same field. Always follow a cereal with a legume."
+  },
+  {
+    "id": "trichoderma",
+    "keywords": ["trichoderma", "trichoderma viride", "biocontrol fungus", "soil fungus", "root disease"],
+    "question": "What is Trichoderma and how does it protect crops?",
+    "answer": "Trichoderma is a naturally occurring beneficial soil fungus that protects plants from root diseases.\n\n🛡️ **How it works:**\n- Colonizes plant roots and outcompetes harmful fungi for space and nutrients\n- Secretes enzymes and antibiotics that dissolve the cell walls of fungal pathogens\n- Triggers the plant's own defense (ISR — Induced Systemic Resistance)\n- Also solubilizes phosphorus and produces plant growth hormones!\n\n🎯 **Controls:** Root rot, Collar rot, Wilt diseases (Fusarium, Pythium, Rhizoctonia, Sclerotium)\n\n✅ **Application:**\n- Seed treatment: Mix 4g Trichoderma viride per kg of seed\n- Soil application: 2.5 kg/acre mixed with 50 kg FYM or compost — broadcast and incorporate\n- Nursery treatment: Drench nursery beds before sowing\n\n⚠️ **Important:** Never apply Trichoderma and chemical fungicides on the same day — chemicals will kill the beneficial fungus!"
+  },
+  {
+    "id": "what_is_etl",
+    "keywords": ["etl", "economic threshold", "threshold level", "spray decision", "when to spray"],
+    "question": "What is ETL (Economic Threshold Level)?",
+    "answer": "ETL is the pest population level at which the cost of applying pesticide equals the value of crop being saved.\n\n📊 **Simple logic:** Below ETL = natural enemies control the pest. Above ETL = intervene.\n\n🌾 **Examples of ETLs:**\n- Rice Stem Borer: 5% dead hearts\n- Fall Armyworm in Maize: 1 larva per plant OR 5% whorl damage\n- Tomato Fruit Borer: 1 larva per 5 plants\n- Whitefly in Pulses: 1 viruliferous adult per plant (zero tolerance!)\n\n💡 **Why ETL matters:** Spraying below ETL wastes money (₹300-500/acre for a spray) and kills natural enemies that were already controlling the pest for FREE.\n\n🌿 **Scout first:** Visit your field twice weekly. Count pests on 5-10 random plants. Calculate average. Compare to ETL before deciding to spray."
+  },
+  {
+    "id": "soil_testing",
+    "keywords": ["soil test", "soil testing", "soil report", "soil analysis", "laboratory"],
+    "question": "How and where to get soil tested?",
+    "answer": "Soil testing is the foundation of profitable farming. Test before every crop.\n\n🧪 **What to test:** pH, EC, N (available), P (available), K (available), Organic Carbon, Micronutrients (Zn, Fe, Mn, Cu, B).\n\n📍 **Where to test in Coimbatore:**\n- TNAU Soil Testing Laboratory, Coimbatore\n- Krishi Vigyan Kendra (KVK) at Bhavanisagar\n- Block-level soil testing centers (contact Block Agriculture Officer)\n- Online: Tamil Nadu Government Soil Health Card scheme\n\n💰 **Cost:** ₹25-100 per sample for basic test. Government schemes often subsidize or provide FREE.\n\n✅ **How to collect sample:**\n1. Collect 8-10 sub-samples from different spots in the field at 0-20 cm depth\n2. Mix thoroughly and take 500g composite sample\n3. Air dry, label with crop history, and submit\n4. Collect at least 15 days before sowing to act on results\n\n📋 **Result tells you:** Exact fertilizer dose needed. Saves over-application cost!"
+  },
+  {
+    "id": "bt_bacillus_thuringiensis",
+    "keywords": ["bt", "bacillus thuringiensis", "biopesticide", "biological spray", "bacteria spray"],
+    "question": "How does Bacillus thuringiensis (Bt) work as a biopesticide?",
+    "answer": "Bacillus thuringiensis (Bt) is a naturally occurring soil bacterium that produces protein crystals toxic ONLY to specific insect larvae.\n\n🔬 **Mechanism:**\n1. Bt crystals are eaten by caterpillars (lepidopteran larvae)\n2. In the alkaline gut of the caterpillar, crystals dissolve into toxic proteins\n3. Toxins poke holes in gut wall → caterpillar stops eating within 2 hours, dies in 3-5 days\n4. Completely HARMLESS to humans, birds, bees, earthworms, and beneficial insects\n\n🎯 **Works against:** Fruit borer, Leaf folder, Pod borer, Bollworm, Fall Armyworm, Budworm\n\n✅ **How to use:**\n- Dose: 2-3 kg/acre\n- Mix in water (250-500L/acre) and spray in the evening (UV destroys Bt in sunlight)\n- Add a few drops of soap (spreader) for better adhesion\n- Repeat every 5-7 days during active feeding\n\n📍 Available as: Halt, Costar, Bioasp, Dipel (commercial brand names)"
+  },
+  {
+    "id": "organic_carbon",
+    "keywords": ["organic carbon", "organic matter", "soil organic", "carbon", "humus"],
+    "question": "Why is soil organic carbon important?",
+    "answer": "Soil Organic Carbon (SOC) is the life-force of soil — it affects almost every aspect of soil health.\n\n🌱 **What it does:**\n- Feeds soil microorganisms (bacteria, fungi) that cycle nutrients\n- Improves soil structure and reduces crusting\n- Increases water-holding capacity (1% SOC holds 20L more water/sqm)\n- Buffers pH changes (reduces extreme acidity/alkalinity)\n- Source of slow-release nitrogen, phosphorus, and sulphur\n\n📊 **Coimbatore status:** Most agricultural soils in Coimbatore district have critically LOW organic carbon (<0.5%) due to continuous cropping and burning of crop residues.\n\n📈 **How to build SOC:**\n1. Never burn crop residues — incorporate them\n2. Apply FYM (5-10 t/acre/year)\n3. Use green manures (Dhaincha, Sunhemp)\n4. Apply vermicompost\n5. Mulching with crop residue\n\n💡 Increasing SOC from 0.3% to 0.6% can improve yield by 15-20% WITHOUT any additional fertilizer."
+  },
+  {
+    "id": "neem_products",
+    "keywords": ["neem", "nske", "neem cake", "neem oil", "botanical pesticide"],
+    "question": "How to use neem as a natural pesticide?",
+    "answer": "Neem (Azadirachta indica) is India's most powerful natural pest repellent and insecticide. Every part of the tree is useful.\n\n🌿 **Neem products for farming:**\n\n**1. NSKE (Neem Seed Kernel Extract) 5%:**\n- Grind 2.5 kg neem seeds → soak in 50L water for 12 hours → filter → spray\n- Controls: Stem borer, Leaf folder, Earhead bugs, Whitefly\n- Frequency: Every 10 days preventively\n\n**2. Neem Oil (Azadirachtin 1500 ppm):**\n- Mix 5-10 ml/L + few drops of soap\n- Controls: Aphids, Mites, Whitefly, Thrips\n- Apply in early morning or evening\n\n**3. Neem Cake:**\n- By-product of oil extraction. Apply 250 kg/acre in soil.\n- Controls: Root knot nematodes, Grubs, Termites\n- Also releases nitrogen slowly as it decomposes\n\n💰 **Cost comparison:** NSKE spray costs ₹150-200/acre vs. ₹350-500/acre for chemical pesticides. Same effectiveness for early-stage pests."
+  },
+  {
+    "id": "micronutrients",
+    "keywords": ["micronutrient", "zinc", "iron", "boron", "deficiency", "trace element", "znso4"],
+    "question": "What are micronutrients and how to correct deficiencies?",
+    "answer": "Micronutrients are elements needed in tiny amounts but critically important for crop health.\n\n🔬 **Key micronutrients and symptoms:**\n\n⚡ **Zinc (Zn):** Most common deficiency in Coimbatore! Symptoms: Bronze/rusty leaves, stunted growth, 'Little leaf' in mango.\n✅ Fix: ZnSO4 @ 25 kg/ha basal OR 0.5% foliar spray\n\n🩸 **Iron (Fe):** Common in alkaline calcareous soils. Symptoms: Yellowing between leaf veins (chlorosis) on young leaves.\n✅ Fix: Ferrous sulphate 0.5% foliar spray OR drip fertigation\n\n🫧 **Boron (B):** Critical at flowering. Symptoms: Hollow stems, poor fruit set, cracked fruits in cotton, groundnut.\n✅ Fix: Borax @ 2 kg/acre soil application OR 0.25% foliar spray\n\n⚙️ **Copper (Cu):** Important for onion (Coimbatore specialty). Symptoms: Bluish-green leaves, poor tillering.\n✅ Fix: CuSO4 @ 10 kg/ha soil application\n\n📍 Coimbatore tip: Alkaline red calcareous soils lock Fe and Zn. Always apply ZnSO4 as basal dose and watch for iron chlorosis."
+  },
+  {
+    "id": "trichogramma",
+    "keywords": ["trichogramma", "egg parasitoid", "parasitoid", "biocontrol agent"],
+    "question": "What is Trichogramma and how to release it?",
+    "answer": "Trichogramma is a tiny wasp (egg parasitoid) that lays its own eggs inside the eggs of harmful insects — killing them before they hatch.\n\n🐝 **How it works:**\n- Trichogramma female finds eggs of pest insects (stem borer, fruit borer, bollworm)\n- She lays her eggs INSIDE the pest egg\n- Trichogramma larva develops, killing the pest egg\n- The pest never hatches → no crop damage!\n\n🎯 **Effective against:** Stem borer (Rice, Sugarcane), Fruit borer (Tomato, Chilli), Bollworm (Cotton)\n\n✅ **How to release:**\n- Purchase Trichogramma cards from TNAU Biocontrol Lab, Coimbatore (₹200-300/acre)\n- Release 1 lakh adults per acre per week during pest season\n- Hang cards at 25 cm above crop canopy\n- Release in morning (avoid mid-day heat)\n- Do NOT spray insecticides for at least 7 days before/after release\n\n💰 **Cost:** ₹200-400/acre for 3 releases vs. ₹1,500-2,000/acre for chemical pesticides. And Trichogramma reproduces by itself!"
+  },
+  {
+    "id": "soil_test_results",
+    "keywords": ["interpret", "reading", "understand", "low n", "low p", "low k", "high ph", "low ph"],
+    "question": "How to interpret my soil test results?",
+    "answer": "Here's a quick guide to reading Coimbatore soil test results:\n\n📋 **Critical limits for Tamil Nadu soils:**\n\n🟢 **pH:** Optimal 6.0-7.0. Below 5.5 = add lime. Above 8.0 = add gypsum.\n\n🔵 **Organic Carbon:** >0.75% = High. 0.50-0.75% = Medium. <0.50% = Low (most Coimbatore soils). Add FYM/vermicompost.\n\n🟡 **Available Nitrogen (N):** >280 kg/ha = High. 140-280 = Medium. <140 = Low. Apply Azospirillum + Urea.\n\n🟠 **Available Phosphorus (P):** >25 kg/ha = High. 11-25 = Medium. <11 = Low. Apply PSB + SSP/DAP.\n\n🔴 **Available Potassium (K):** >300 kg/ha = High. 150-300 = Medium. <150 = Low. Apply KMB + MOP.\n\n💡 **Most important number is pH** — it affects ALL other nutrients. Fix pH first, then adjust fertilizers."
+  },
+  {
+    "id": "fym",
+    "keywords": ["fym", "farmyard manure", "cow dung", "animal manure", "organic manure"],
+    "question": "How to prepare and use Farmyard Manure (FYM)?",
+    "answer": "FYM (Farmyard Manure) is a mixture of animal dung, urine, crop residues, and bedding material composted over time.\n\n📊 **Nutrient content (well-composted FYM):**\n- N: 0.5%, P: 0.25%, K: 0.5% (slow-release over 3-6 months)\n- Also contains micronutrients and beneficial microorganisms\n\n✅ **How to prepare:**\n1. Collect dung + urine-soaked bedding in a pit\n2. Layer with dry crop residues and water to keep moist\n3. Turn the heap every 15 days to allow even decomposition\n4. Ready in 3-4 months (should be dark, crumbly, earthy smell)\n\n⚠️ **Never use fresh (uncomposted) manure** — can burn crops, may contain weed seeds, pathogens.\n\n💰 **Application rate:** 5-10 tonnes/acre. Cost: ₹3,000-5,000/acre. This reduces chemical fertilizer requirement by 30-40% and provides organic carbon that improves soil structure permanently."
+  },
+  {
+    "id": "yield_estimate",
+    "keywords": ["yield", "production", "how much", "output", "estimate"],
+    "question": "How to estimate crop yield before harvest?",
+    "answer": "You can estimate your expected yield before harvest using the standard TNAU method:\n\n📐 **Crop Cut Experiment (CCE) method:**\n1. Mark a 5×5 meter (25 sqm) area randomly in 3 spots in your field\n2. Harvest all produce from within each marked area\n3. Weigh the produce from each area\n4. Average the 3 weights\n5. Multiply by 400 (to get kg/acre)\n\n📊 **Typical yield benchmarks for Coimbatore (kg/acre):**\n- Rice (Paddy): 1,500-2,200 kg/acre\n- Maize: 1,800-2,500 kg/acre\n- Groundnut: 700-1,000 kg/acre (pods)\n- Cotton: 400-600 kg/acre (seed cotton)\n- Tomato: 5,000-9,000 kg/acre\n- Sugarcane: 15,000-25,000 kg/acre\n\n💡 **Your yield gap** = (Average yield - Your yield) = Potential improvement with better soil management.\nThulir's pre-farming fixes typically close 20-35% of this yield gap."
+  }
+]

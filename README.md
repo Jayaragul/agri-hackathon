@@ -1,29 +1,21 @@
-# <!-- Team name --> · Tech for Good 2026
+# Thulir
 
-Team repository for **Build with AI: Code for Communities** — GDG Coimbatore
-(hackathon **Aug 8–9, 2026**, GRD College).
+Thulir is an explainable agricultural decision-support application. Crop recommendations, soil corrections, and financial calculations remain deterministic; Google Gemini provides a grounded natural-language advisory layer.
 
-Everything your team does lives here from day one: the proposal, code, docs, and
-progress. Organizers follow along through this repo, so keep it active.
+## Local setup
 
-## Start here
-1. **Fill in [`PROPOSAL.md`](./PROPOSAL.md)** and commit it by **Jul 24, 11:59 PM IST**. That's your Ideation-Phase submission.
-2. **Add your teammates** as collaborators (Settings → Collaborators), or ask your organizer to add them by GitHub username.
-3. **Build in the open** — commit early and often. Put source in `/src`, notes and diagrams in `/docs`.
+```text
+npm ci
+Copy-Item .env.example .env.local
+npm run dev
+```
 
-## Repo layout
-| Path | For |
-|------|-----|
-| `PROPOSAL.md` | Your architecture proposal (the submission) |
-| `/src` | Application code |
-| `/docs` | Design notes, diagrams, research |
-| Issues | Track tasks; use the **Progress update** template for weekly check-ins |
+Set `GEMINI_API_KEY` in `.env.local` before starting the server. The key is read only by the local API middleware or deployed serverless API route and must never use a `VITE_` prefix.
 
-## Ground rules
-- Teams are **2–4 people**.
-- Keep the repo **public** — it's part of the open-source, tech-for-good spirit and helps judging.
-- Use the four SDG tracks; build something that helps a real community.
+Optional configuration:
 
-Questions? Ping the organizers in the mixer WhatsApp group or open an issue.
+```text
+GEMINI_MODEL=gemini-3.6-flash
+```
 
-— GDG Coimbatore · TiE Kovai Con · GRD College · Startup Culture
+Without a configured key, the advisor clearly displays its verified local-knowledge fallback.
