@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { useFarmStore } from './state/farmStore'
-import { Bot, Check, Sprout, Sun } from 'lucide-react'
+import { Bot, Check, Mic, Sprout, Stethoscope, Sun } from 'lucide-react'
 
 // Domain Features
 import FarmProfileForm from './features/farm-profile/FarmProfileForm'
@@ -15,6 +15,9 @@ import AiTracePanel from './features/ai-trace/AiTracePanel'
 import VoiceControlWidget from './features/voice-control/VoiceControlWidget'
 import DigitalTwinFeature from './features/digital-twin'
 import FarmAdvisor from './features/farm-advisor/FarmAdvisor'
+import CropDoctor from './features/crop-doctor/CropDoctor'
+import VoiceMode from './features/voice-mode/VoiceMode'
+import OnboardingGate from './features/onboarding/OnboardingGate'
 
 const STAGES = [
   { id: 'farm-profile', label: 'Soil Data' },
@@ -27,13 +30,15 @@ const STAGES = [
 ] as const
 
 function App() {
-  const { stage, setStage, profile, selectedCrop } = useFarmStore()
+  const { stage, setStage, profile, selectedCrop, onboardingComplete, completeOnboarding } = useFarmStore()
   const mainRef = useRef<HTMLElement>(null)
   const lastWizardStage = useRef<(typeof STAGES)[number]['id']>('farm-profile')
 
   const isDigitalTwin = stage === 'digital-twin'
   const isAdvisor = stage === 'advisor'
-  const isSpecialMode = isDigitalTwin || isAdvisor
+  const isCropDoctor = stage === 'crop-doctor'
+  const isAudioMode = stage === 'audio-mode'
+  const isSpecialMode = isDigitalTwin || isAdvisor || isCropDoctor || isAudioMode
   const currentStageIndex = STAGES.findIndex(s => s.id === stage)
   if (!isSpecialMode && currentStageIndex >= 0) {
     lastWizardStage.current = stage as (typeof STAGES)[number]['id']
@@ -52,6 +57,8 @@ function App() {
   const renderStage = () => {
     if (isDigitalTwin) return <DigitalTwinFeature />
     if (isAdvisor) return <FarmAdvisor />
+    if (isCropDoctor) return <CropDoctor onSwitchToAudio={() => setStage('audio-mode')} />
+    if (isAudioMode) return <VoiceMode onSwitchToVideo={() => setStage('crop-doctor')} />
     switch (stage) {
       case 'farm-profile':
         return <FarmProfileForm />
@@ -80,6 +87,17 @@ function App() {
       if (idx > 1 && !selectedCrop) return // Need crop for anything past step 1
     }
     setStage(targetStageId)
+  }
+
+  if (!onboardingComplete) {
+    return (
+      <OnboardingGate
+        onModeChosen={(mode) => {
+          completeOnboarding()
+          setStage(mode === 'audio' ? 'audio-mode' : 'crop-doctor')
+        }}
+      />
+    )
   }
 
   return (
@@ -116,6 +134,22 @@ function App() {
                 onClick={() => setStage('digital-twin')}
               >
                 <Sprout size={16} /> Digital Twin
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ height: '40px', padding: '0 16px', fontSize: '14px' }}
+                onClick={() => setStage('crop-doctor')}
+              >
+                <Stethoscope size={16} /> Crop Doctor
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ height: '40px', padding: '0 16px', fontSize: '14px' }}
+                onClick={() => setStage('audio-mode')}
+              >
+                <Mic size={16} /> Audio Mode
               </button>
             </>
           )}

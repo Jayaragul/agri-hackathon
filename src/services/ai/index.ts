@@ -98,6 +98,22 @@ export function getAiHarness(): AiHarness {
 }
 
 /**
+ * The raw transport, for the one caller that needs to drive it directly instead of through
+ * `AiHarness.run()` — `resolveToolCalls.ts`'s tool-decision pre-step, which must send a
+ * `tools`-bearing prompt (mutually exclusive with the schema-validated JSON path `run()`
+ * always takes) and read back `functionCalls`. Everything else in the app must keep going
+ * through `getAiHarness().run()`.
+ */
+export function getAiTransport(): AiTransport | null {
+  return getTransport();
+}
+
+/** Resolved harness settings, for the same tool-decision pre-step (needs `timeoutMs`/`enabled`). */
+export function getAiHarnessConfig(): HarnessConfig {
+  return getConfig();
+}
+
+/**
  * Drop-in `ExplanationProvider` for `CropDecision.tsx`.
  *
  * Returns the AI-backed provider, which itself falls back to

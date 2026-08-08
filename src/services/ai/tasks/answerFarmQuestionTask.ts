@@ -29,11 +29,17 @@ export function createAnswerFarmQuestionTask(): AiTaskDefinition<AnswerFarmQuest
       return buildLocalFarmAnswer(input.question, input.profile, input.crop, input.topRecommendation);
     },
 
-    /** Keyed on the question and the farm's identifying facts, so two different farms (or two states of the same farm) never share a cached, mis-personalised answer. */
+    /** Keyed on the question, the farm's identifying facts, the farmer's name, and whatever they've declared/logged/predicted, so two different farms (or two farmers, or two states of the same farm) never share a cached, mis-personalised answer. */
     cacheKey(input: AnswerFarmQuestionInput): string {
       const cropId = input.crop?.id ?? "no-crop";
       const region = (input.profile?.region ?? "no-profile").toLowerCase().trim();
-      return `farm-q:${cropId}:${region}:${stableHash(input.question)}`;
+      const farmerName = (input.farmerName ?? "no-name").toLowerCase().trim();
+      const declared = stableHash(input.declaredSituation ?? "");
+      const events = stableHash((input.recentEvents ?? []).join("|"));
+      const alerts = stableHash((input.upcomingAlerts ?? []).join("|"));
+      const toolResults = stableHash((input.liveToolResults ?? []).join("|"));
+      const style = input.spokenStyle ? "voice" : "text";
+      return `farm-q:${cropId}:${region}:${farmerName}:${declared}:${events}:${alerts}:${toolResults}:${style}:${stableHash(input.question)}`;
     },
 
     temperature: 0.2,

@@ -224,7 +224,7 @@ const AiTracePanel: React.FC = () => {
           aria-label="Open the AI call trace"
         >
           <Activity size={16} />
-          Antigravity ADK Trace
+          AI Agent Trace
           <span className={statusClass} style={{ marginLeft: '4px' }}>
             {records.length}
           </span>
@@ -265,7 +265,7 @@ const AiTracePanel: React.FC = () => {
         <Activity size={18} style={{ color: 'var(--accent)', flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--foreground)' }}>
-            Antigravity ADK Agent Trace
+            AI Agent Trace
           </div>
           <div style={monoLabel}>Multi-agent trajectory & telemetry</div>
         </div>

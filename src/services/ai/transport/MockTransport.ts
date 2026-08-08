@@ -15,6 +15,7 @@
 
 import { AiHarnessError } from "../contracts/aiTypes";
 import type {
+  AiFunctionCall,
   AiTransport,
   GenerateOptions,
   PromptPayload,
@@ -31,6 +32,7 @@ export interface MockTransportStep {
   delayMs?: number;
   modelId?: string;
   groundingUrls?: string[];
+  functionCalls?: AiFunctionCall[];
 }
 
 /** Either a scripted step list or a function computing a result per call. */
@@ -150,8 +152,9 @@ export class MockTransport implements AiTransport {
     }
 
     const modelId = step.modelId ?? this.defaultModelId;
-    return step.groundingUrls
-      ? { text: step.text ?? "", modelId, groundingUrls: step.groundingUrls.slice() }
-      : { text: step.text ?? "", modelId };
+    const result: TransportResult = { text: step.text ?? "", modelId };
+    if (step.groundingUrls) result.groundingUrls = step.groundingUrls.slice();
+    if (step.functionCalls) result.functionCalls = step.functionCalls.slice();
+    return result;
   }
 }

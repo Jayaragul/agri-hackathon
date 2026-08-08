@@ -10,6 +10,7 @@
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { generateViaGemini, ProxyError } from "../services/geminiProxy";
+import { resolveGeminiApiKey } from "../services/env";
 
 const DEFAULT_MODEL = "gemini-3.6-flash";
 const MAX_PROMPT_CHARS = 20_000;
@@ -20,11 +21,18 @@ const ImageSchema = z.object({
   base64Data: z.string().min(1),
 });
 
+const ToolDeclarationSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(1),
+  parameters: z.unknown(),
+});
+
 const GenerateRequestSchema = z.object({
   system: z.string().max(MAX_PROMPT_CHARS).optional(),
   user: z.string().min(1).max(MAX_PROMPT_CHARS),
   images: z.array(ImageSchema).max(MAX_IMAGES).optional(),
   useSearchGrounding: z.boolean().optional(),
+  tools: z.array(ToolDeclarationSchema).max(10).optional(),
   modelChain: z.array(z.string().min(1)).min(1).max(5),
   temperature: z.number().min(0).max(2).optional(),
   maxOutputTokens: z.number().int().positive().max(8192).optional(),
@@ -32,16 +40,12 @@ const GenerateRequestSchema = z.object({
   timeoutMs: z.number().int().positive().max(120_000).optional(),
 });
 
-function resolveApiKey(): string {
-  return process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim() || "";
-}
-
 export function createAiRoutes(): Router {
   const router = Router();
 
   router.get("/ai/status", (_req: Request, res: Response) => {
     res.status(200).json({
-      configured: resolveApiKey().length > 0,
+      configured: resolveGeminiApiKey().length > 0,
       model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
     });
   });
@@ -53,7 +57,7 @@ export function createAiRoutes(): Router {
     }
 
     try {
-      const reply = await generateViaGemini(resolveApiKey(), parsed.data);
+      const reply = await generateViaGemini(resolveGeminiApiKey(), parsed.data);
       return res.status(200).json(reply);
     } catch (err) {
       const status = err instanceof ProxyError ? err.status : 500;

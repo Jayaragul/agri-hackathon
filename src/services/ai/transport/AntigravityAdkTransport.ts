@@ -8,6 +8,7 @@
 
 import { AiHarnessError, classifyError } from "../contracts/aiTypes";
 import type {
+  AiFunctionCall,
   AiTransport,
   GenerateOptions,
   PromptPayload,
@@ -22,6 +23,7 @@ const MAX_ERROR_BODY_CHARS = 300;
 interface AdkPart {
   text?: string;
   inlineData?: { data: string; mimeType: string };
+  functionCall?: { name: string; args?: Record<string, unknown> };
 }
 
 interface AdkGenerationConfig {
@@ -65,6 +67,20 @@ function normaliseTimeout(timeoutMs?: number): number {
     return FALLBACK_TIMEOUT_MS;
   }
   return Math.min(timeoutMs, 120_000);
+}
+
+function extractFunctionCalls(candidate?: AdkCandidate): AiFunctionCall[] | undefined {
+  const parts = candidate?.content?.parts;
+  if (!Array.isArray(parts)) return undefined;
+
+  const calls: AiFunctionCall[] = [];
+  for (const part of parts) {
+    const call = part?.functionCall;
+    if (call && typeof call.name === "string" && call.name.length > 0) {
+      calls.push({ name: call.name, args: call.args ?? {} });
+    }
+  }
+  return calls.length > 0 ? calls : undefined;
 }
 
 function extractGroundingUrls(candidate?: AdkCandidate): string[] | undefined {
@@ -184,6 +200,16 @@ export class AntigravityAdkTransport implements AiTransport {
 
       if (payload.useSearchGrounding) {
         body.tools = [{ googleSearch: {} }];
+      } else if (payload.tools && payload.tools.length > 0) {
+        body.tools = [
+          {
+            functionDeclarations: payload.tools.map((tool) => ({
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.parameters,
+            })),
+          },
+        ];
       } else if (options.responseSchema) {
         genConfig.responseMimeType = "application/json";
         genConfig.responseSchema = options.responseSchema;
@@ -224,12 +250,13 @@ export class AntigravityAdkTransport implements AiTransport {
 
       const candidate = data.candidates?.[0];
       const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+      const groundingUrls = extractGroundingUrls(candidate);
+      const functionCalls = extractFunctionCalls(candidate);
 
-      return {
-        text,
-        modelId: model,
-        groundingUrls: extractGroundingUrls(candidate),
-      };
+      const result: TransportResult = { text, modelId: model };
+      if (groundingUrls) result.groundingUrls = groundingUrls;
+      if (functionCalls) result.functionCalls = functionCalls;
+      return result;
     } catch (err) {
       if (options.signal?.aborted) {
         throw new AiHarnessError("Agent run cancelled by caller.", "unknown");

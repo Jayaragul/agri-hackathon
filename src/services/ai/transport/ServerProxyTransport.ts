@@ -10,13 +10,20 @@
  * reachable, which `generate()` discovers per-call rather than through a synchronous probe.
  */
 import { AiHarnessError, classifyError } from "../contracts/aiTypes";
-import type { AiTransport, GenerateOptions, PromptPayload, TransportResult } from "../contracts/aiTypes";
+import type {
+  AiFunctionCall,
+  AiTransport,
+  GenerateOptions,
+  PromptPayload,
+  TransportResult,
+} from "../contracts/aiTypes";
 import type { HarnessConfig } from "../runtime/harnessConfig";
 
 interface ProxyReply {
   text: string;
   modelId: string;
   groundingUrls?: string[];
+  functionCalls?: AiFunctionCall[];
 }
 
 function normaliseTimeout(timeoutMs?: number): number {
@@ -68,6 +75,7 @@ export class ServerProxyTransport implements AiTransport {
           user: payload.user,
           images: payload.images,
           useSearchGrounding: payload.useSearchGrounding,
+          tools: payload.tools,
           modelChain: this.config.modelChain,
           temperature: opts.temperature,
           maxOutputTokens: opts.maxOutputTokens,
@@ -96,9 +104,10 @@ export class ServerProxyTransport implements AiTransport {
       }
 
       const reply = (await response.json()) as ProxyReply;
-      return reply.groundingUrls
-        ? { text: reply.text, modelId: reply.modelId, groundingUrls: reply.groundingUrls }
-        : { text: reply.text, modelId: reply.modelId };
+      const result: TransportResult = { text: reply.text, modelId: reply.modelId };
+      if (reply.groundingUrls) result.groundingUrls = reply.groundingUrls;
+      if (reply.functionCalls) result.functionCalls = reply.functionCalls;
+      return result;
     } catch (err) {
       if (opts.signal?.aborted) throw new AiHarnessError("Agent run cancelled by caller.", "unknown");
       if (controller.signal.aborted) throw new AiHarnessError(`Server AI proxy timed out after ${timeoutMs}ms.`, "timeout");

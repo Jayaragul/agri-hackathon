@@ -6,6 +6,11 @@ import { getA2AOrchestrator } from '../../services/ai/a2a'
 import type { AiSourceKind, FarmAdvisorAnswer } from '../../services/ai'
 import { getSessionStorage } from '../../services/storage'
 import type { ChatMessage } from '../../services/storage'
+import { recallMemories, recordMemory } from '../../services/memory/memoryClient'
+import { getFarmContextSnapshot } from '../../services/context/farmContext'
+import { describeProactiveAlert } from '../../engine/proactiveEngine'
+import { getWeatherProactiveAlerts } from '../../services/weather/weatherContext'
+import { runFarmAdvisorToolLoop } from '../../services/ai/runtime/farmAdvisorTools'
 
 /**
  * General "ask anything" farm advisor — open-ended, unlike the Cultivation Calendar's
@@ -29,7 +34,7 @@ const SUGGESTED_PROMPTS = [
 ]
 
 const FarmAdvisor: React.FC = () => {
-  const { profile, selectedCrop, recommendations } = useFarmStore()
+  const { profile, selectedCrop, recommendations, farmerName, declaredSituation } = useFarmStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [question, setQuestion] = useState('')
   const [asking, setAsking] = useState(false)
@@ -74,13 +79,28 @@ const FarmAdvisor: React.FC = () => {
     const topRecommendation = recommendations[0] ?? null
     const afterFarmer = await storage.appendAdvisorMessage({ role: 'farmer', text: questionText })
     setMessages(afterFarmer)
+    void recordMemory('farmer', questionText)
 
     try {
+      const memories = await recallMemories(questionText)
+      const { recentEvents, upcomingAlerts } = getFarmContextSnapshot()
+      const weatherAlerts = await getWeatherProactiveAlerts(profile?.region)
+      const toolLoop = await runFarmAdvisorToolLoop(questionText, {
+        crop: selectedCrop ?? null,
+        profile: profile ?? null,
+        topRecommendation,
+      })
       const outcome = await getA2AOrchestrator().dispatch<FarmAdvisorAnswer>('answer-farm-question', {
         question: questionText,
         profile: profile ?? null,
         crop: selectedCrop ?? null,
         topRecommendation,
+        memories,
+        farmerName,
+        declaredSituation,
+        recentEvents: recentEvents.map((e) => e.title),
+        upcomingAlerts: [...upcomingAlerts, ...weatherAlerts].map(describeProactiveAlert),
+        liveToolResults: toolLoop.toolContextLines,
       })
       const afterAssistant = await storage.appendAdvisorMessage({
         role: 'assistant',
@@ -89,6 +109,7 @@ const FarmAdvisor: React.FC = () => {
         source: outcome.source,
       })
       setMessages(afterAssistant)
+      void recordMemory('assistant', outcome.data.answer)
     } catch {
       const afterAssistant = await storage.appendAdvisorMessage({
         role: 'assistant',

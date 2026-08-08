@@ -15,6 +15,12 @@ import express, { type NextFunction, type Request, type Response } from "express
 import { createStorageBackend } from "./storage/bucketStore";
 import { createSessionRoutes } from "./routes/sessionRoutes";
 import { createAiRoutes } from "./routes/aiRoutes";
+import { createLiveRoutes } from "./routes/liveRoutes";
+import { createMemoryRoutes } from "./routes/memoryRoutes";
+import { createVoiceRoutes } from "./routes/voiceRoutes";
+import { createWeatherRoutes } from "./routes/weatherRoutes";
+import { getMemoryBackend } from "./services/memoryService";
+import { resolveGeminiApiKey, resolveSarvamApiKey, resolveWeatherApiKey } from "./services/env";
 
 const PORT = Number.parseInt(process.env.PORT ?? "8080", 10) || 8080;
 
@@ -35,9 +41,15 @@ function main(): void {
 
   app.use("/api", createSessionRoutes(storage));
   app.use("/api", createAiRoutes());
+  app.use("/api", createLiveRoutes());
+  app.use("/api", createMemoryRoutes());
+  app.use("/api", createVoiceRoutes());
+  app.use("/api", createWeatherRoutes());
+  getMemoryBackend(); // resolved eagerly so its startup log appears alongside storage/Gemini
 
-  const geminiConfigured = Boolean(process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim());
-  console.log(`Gemini proxy: ${geminiConfigured ? "configured" : "no GEMINI_API_KEY set — /api/ai/generate will 503"}`);
+  console.log(`Gemini proxy: ${resolveGeminiApiKey() ? "configured" : "no GEMINI_API_KEY set — /api/ai/generate will 503"}`);
+  console.log(`Sarvam proxy (Audio Mode): ${resolveSarvamApiKey() ? "configured" : "no SARVAM_API_KEY set — /api/voice/* will 503"}`);
+  console.log(`Weather proxy: ${resolveWeatherApiKey() ? "configured" : "no GOOGLE_WEATHER_API_KEY set — /api/weather/forecast will 503"}`);
 
   // Serve the built SPA. Static assets first (so real files with a matching name are returned
   // as-is and 404 normally if missing); a catch-all fallback to index.html handles client-side

@@ -13,6 +13,7 @@
  */
 
 import type { ZodType } from "zod";
+import type { A2AJsonSchema } from "../a2a/types";
 
 /**
  * Closed set of AI-assisted jobs the harness knows how to run. Used as the telemetry
@@ -48,18 +49,39 @@ export interface InlineImage {
 }
 
 /**
+ * A single developer-defined tool the model may call instead of answering directly. Mirrors
+ * Gemini's `functionDeclarations` shape. `parameters` reuses the same JSON-Schema shape the
+ * A2A catalog already produces via `zodToJsonSchema.ts` — one schema representation for both
+ * the human-readable agent catalog and the model-facing tool contract.
+ */
+export interface AiToolDeclaration {
+  name: string;
+  description: string;
+  parameters: A2AJsonSchema;
+}
+
+/** One function call the model asked the caller to execute, with its (untyped) arguments. */
+export interface AiFunctionCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+
+/**
  * A fully-built, transport-agnostic prompt. Produced by a task's `buildPrompt` and consumed
  * by any `AiTransport`. Keeping this plain lets the SDK and REST transports stay swappable.
  *
  * `useSearchGrounding` requests the Google Search grounding tool. Grounding cannot be
  * combined with JSON response-mime-type, so grounded tasks must ask for plain text and be
- * parsed defensively.
+ * parsed defensively. `tools`, when present, requests developer-defined function-calling
+ * instead — mutually exclusive with both `useSearchGrounding` and a JSON response schema on
+ * the same call (a Gemini constraint every transport enforces identically).
  */
 export interface PromptPayload {
   system: string;
   user: string;
   images?: InlineImage[];
   useSearchGrounding?: boolean;
+  tools?: AiToolDeclaration[];
 }
 
 /**
@@ -99,12 +121,15 @@ export interface GenerateOptions {
 
 /**
  * Raw text a transport got back, plus the model that actually served it (which may be a
- * fallback further down the model chain) and any grounding citations.
+ * fallback further down the model chain) and any grounding citations. `functionCalls` is
+ * populated only when the payload declared `tools` and the model chose to call one or more
+ * instead of (or alongside) returning text.
  */
 export interface TransportResult {
   text: string;
   modelId: string;
   groundingUrls?: string[];
+  functionCalls?: AiFunctionCall[];
 }
 
 /**
