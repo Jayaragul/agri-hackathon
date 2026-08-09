@@ -182,6 +182,24 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   border-bottom: 1px solid #E5E5E5;
 }
 
+/* Compact icon-only header nav buttons (Digital Twin / Audio Mode) — no visible text label, so
+   the header stays a single row and doesn't need to reserve horizontal space for growing labels
+   on a narrow phone. `title`/`aria-label` on the button element still carries the name for
+   sighted hover users and screen readers. */
+.icon-nav-btn {
+  /* !important on width: the mobile `.btn { width: 100%; }` rule further down this file (same
+     0-1-0-0 specificity) comes later in source order and would otherwise win at narrow
+     viewports, stretching this button across its flex container instead of staying icon-sized —
+     same class of bug the `.app-container-immersive` comment above documents. */
+  width: 40px !important;
+  height: 40px;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .brand-logo {
   display: block;
   object-fit: contain;
@@ -700,25 +718,12 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
     gap: 6px 12px;
   }
 
-  .app-header {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
+  /* Only two fixed-size icon buttons live in .header-actions now (Digital Twin / Audio Mode —
+     see App.tsx) — they always fit in one row next to the logo/title, so unlike the old 4-label
+     button set this no longer needs to force a full-width grid or wrap to a second line. */
   .header-actions {
-    width: 100%;
-    margin-left: 0 !important;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px !important;
-  }
-
-  .header-actions .btn {
-    width: 100%;
-    min-width: 0;
-    padding: 0 10px !important;
-    font-size: 13px !important;
-    white-space: nowrap;
+    flex-shrink: 0;
+    gap: 6px !important;
   }
 
   .farm-advisor-shell h2 {

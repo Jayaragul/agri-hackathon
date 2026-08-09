@@ -92,3 +92,34 @@ export function createFileBackend(): FileBackend {
     return new MemoryFileBackend();
   }
 }
+
+/**
+ * Archival copy of every synced marketplace order / published listing, written under
+ * `farmconnect/orders/**` and `farmconnect/listings/**` (see `services/marketplaceStore.ts`).
+ * Firestore (`documentStore.ts`) stays the actual system of record the app reads from — this is
+ * a separate, best-effort raw JSON trail for export/audit/backup, the same role `bucketStore.ts`
+ * used to play for marketplace data before that moved to Firestore to fix a write race.
+ *
+ * Deliberately its OWN bucket config (`AGRIDB_BUCKET_NAME`), not reused off `GCS_BUCKET_NAME`
+ * automatically: the two are conceptually different data (Thulir's own session/soil-report
+ * files vs. a raw marketplace archive) and may live in different GCP buckets or projects. Falls
+ * back to `GCS_BUCKET_NAME` only if `AGRIDB_BUCKET_NAME` is unset, so a single-bucket setup still
+ * works with one env var.
+ */
+export function createMarketplaceArchiveBackend(): FileBackend {
+  const bucketName = (process.env.AGRIDB_BUCKET_NAME?.trim() || process.env.GCS_BUCKET_NAME?.trim());
+
+  if (!bucketName) {
+    console.log("Marketplace archive: in-memory fallback (no AGRIDB_BUCKET_NAME or GCS_BUCKET_NAME set)");
+    return new MemoryFileBackend();
+  }
+
+  try {
+    const backend = new GcsFileBackend(bucketName);
+    console.log(`Marketplace archive: Google Cloud Storage (bucket "${bucketName}")`);
+    return backend;
+  } catch (err) {
+    console.log(`Marketplace archive: in-memory fallback (bucket "${bucketName}" set, but backend construction failed: ${describeError(err)})`);
+    return new MemoryFileBackend();
+  }
+}

@@ -141,6 +141,13 @@ export RUNTIME_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 gsutil iam ch "serviceAccount:${RUNTIME_SA}:roles/storage.objectAdmin" "gs://${BUCKET_NAME}"
 ```
 
+**If `AGRIDB_BUCKET_NAME` points at a bucket other than `$BUCKET_NAME`** (the FarmConnect
+marketplace archive — see `.env.example`), grant the same role there too:
+
+```bash
+gsutil iam ch "serviceAccount:${RUNTIME_SA}:roles/storage.objectAdmin" "gs://${AGRIDB_BUCKET_NAME}"
+```
+
 **If you created a Firestore database (step 2a)**, grant read/write access at the project level
 (Firestore doesn't have a per-database IAM binding the way a bucket does):
 

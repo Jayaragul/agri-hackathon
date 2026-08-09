@@ -126,7 +126,15 @@ export async function createLiveToken(
               outputAudioTranscription: {},
               mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
               contextWindowCompression: { slidingWindow: {} },
-              sessionResumption: { handle: resumptionHandle, transparent: true },
+              // `transparent: true` is a Vertex AI / Gemini Enterprise Agent Platform-only flag —
+              // this app authenticates with a plain GEMINI_API_KEY (Gemini Developer API mode),
+              // which rejects it outright ("transparent parameter is only supported in Gemini
+              // Enterprise Agent Platform mode, not in Gemini Developer API mode"), failing the
+              // token mint before a Crop Doctor session can even open. Resumption itself still
+              // works via `handle` alone — the server sends `sessionResumptionUpdate` messages
+              // for a plain (non-transparent) resumable session in Developer API mode too;
+              // `CropDoctorSession.ts` already just reads `newHandle` off whatever update arrives.
+              sessionResumption: { handle: resumptionHandle },
             },
           },
         },
