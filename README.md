@@ -71,6 +71,27 @@ detail lives in [`catalog.md`](catalog.md).
 | Weather | Google Maps Platform Weather API |
 | Hosting | Google Cloud Run (single container, Cloud Build) |
 
+## Project structure
+
+```
+├── src/                        Frontend (React + TypeScript)
+│   ├── engine/                 Deterministic scoring/calendar/proactive-alert engines
+│   ├── services/ai/            Agents, tasks, transports, the A2A orchestrator
+│   ├── services/marketplace/   FarmConnect integration client
+│   ├── services/soilReport/    Soil-report upload/persistence client
+│   ├── features/               One folder per screen (voice-mode, crop-doctor, ...)
+│   ├── domain/models/          Shared TypeScript types
+│   └── data/sample/            Verified crop/pest/correction datasets
+├── server/                     Backend (Express + TypeScript)
+│   ├── src/routes/             /api/* endpoints
+│   ├── src/services/           Gemini/Sarvam/Weather proxies, marketplace demand logic
+│   └── src/storage/            GCS (bucketStore/fileStore) + Firestore (documentStore) backends
+├── marketplace/                FarmConnect — an independently-deployed vanilla-JS consumer app
+├── .claude/skills/              Storage-audit tooling (Python CLI + docs)
+├── deploy/DEPLOY.md            Cloud Run deployment runbook
+└── catalog.md                  Full agent & skill catalog
+```
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
