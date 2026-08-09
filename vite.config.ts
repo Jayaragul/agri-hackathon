@@ -26,8 +26,8 @@ export default defineConfig({
         name: 'Krishi Mitra',
         short_name: 'KrishiMitra',
         description: 'AI Farm Decision Support for Indian Farmers',
-        theme_color: '#15803d',
-        background_color: '#f0fdf4',
+        theme_color: '#4285F4',
+        background_color: '#FFFFFF',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
