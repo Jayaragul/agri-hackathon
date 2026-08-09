@@ -36,6 +36,14 @@ crop choice or a mistimed input purchase can mean a season of debt.
 Krishi Mitra is designed specifically for a **first-time, possibly non-literate user** on a
 budget Android phone: audio-first, plain language, and honest about what it doesn't know.
 
+## The solution
+
+A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
+cultivation calendar turns that into a day-by-day plan, and a set of AI agents explain, extract,
+and converse around that plan — never replacing it. See
+[Architecture & the AI boundary](#architecture--the-ai-boundary) for exactly how that split is
+enforced in code, not just in a slide.
+
 ## Key features
 
 - 🎙️ **Audio Mode** — the app's default landing screen. A farmer speaks naturally in Tamil or
@@ -224,11 +232,3 @@ decision belongs in `src/engine/`, not the AI layer.
 
 Built for a Google Developer Groups hackathon under the "Solving world hunger using AI" track,
 by team **code-sastra**.
-
-## The solution
-
-A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
-cultivation calendar turns that into a day-by-day plan, and a set of AI agents explain, extract,
-and converse around that plan — never replacing it. See
-[Architecture & the AI boundary](#architecture--the-ai-boundary) for exactly how that split is
-enforced in code, not just in a slide.
