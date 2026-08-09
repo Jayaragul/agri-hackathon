@@ -44,7 +44,7 @@ export default defineConfig({
     alias: { '@': '/src' }
   },
   server: {
-    port: 5173,
+    port: Number(process.env.PORT) || 5173,
     // Mirrors production's single-origin setup (server/ serves both the API and the built SPA)
     // so VITE_AI_TRANSPORT=server works the same in local dev as it does deployed. `npm run
     // dev:full` (root package.json) starts this AND the backend together; plain `npm run dev`

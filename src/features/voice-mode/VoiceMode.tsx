@@ -73,7 +73,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
       <input
         ref={labReportInputRef}
         type="file"
-        accept="image/*,.pdf,application/pdf"
+        accept="image/*,application/pdf"
         capture="environment"
         style={{ display: 'none' }}
         onChange={handleLabReportChange}
@@ -83,10 +83,11 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
         className="voice-lab-report-btn"
         disabled={labReportStatus === 'uploading'}
         onClick={() => labReportInputRef.current?.click()}
-        title="Add a photo of your soil test / lab report"
+        title="Add a photo or PDF of your soil test / lab report"
+        aria-label="Add a photo or PDF of your soil test / lab report"
       >
         {labReportStatus === 'uploading' ? <Loader2 size={14} className="spin" /> : <FileText size={14} />}
-        Lab report
+        <span>Lab report</span>
       </button>
 
       <div style={{ width: '100%', maxWidth: '480px', display: 'flex', justifyContent: 'center', paddingTop: '8px', marginBottom: '20px' }}>

@@ -25,6 +25,7 @@ import { deriveCurrentCropCalendarPlan } from "../../../engine/currentCropCalend
 import { getWeatherProactiveAlerts } from "../../weather/weatherContext";
 import { describeProactiveAlert } from "../../../engine/proactiveEngine";
 import { recallMemories } from "../../memory/memoryClient";
+import { getMarketDemand, publishListing } from "../../marketplace/marketplaceClient";
 import { resolveToolCalls, type ResolveToolCallsResult, type ToolExecutor } from "./resolveToolCalls";
 import { getAiHarnessConfig, getAiTransport } from "../index";
 
@@ -54,11 +55,21 @@ const recallMoreMemoriesParams = z.object({
   query: z.string().min(1).max(300).describe("A focused search query for something specific the farmer may have said in a past conversation."),
 });
 
+const marketDemandParams = z.object({});
+
+const sellCropParams = z.object({
+  quantity: z.number().positive().describe("How much the farmer wants to sell, in the unit given below. Must come from what the farmer actually said — never guess a number."),
+  unit: z.string().min(1).max(20).describe("Unit for quantity, e.g. 'kg', 'piece', 'bunch'. Must come from what the farmer actually said."),
+  price: z.number().positive().describe("Price per unit in rupees the farmer wants to sell at. Must come from what the farmer actually said — never invent or estimate one, even from get_market_demand's suggestedPricePerUnit, unless the farmer explicitly agrees to that figure first."),
+});
+
 export const FARM_ADVISOR_TOOL_NAMES = {
   marketPrice: "get_live_market_price",
   calendarDay: "get_calendar_day",
   weatherAlerts: "get_weather_alerts",
   recallMemories: "recall_more_memories",
+  marketDemand: "get_market_demand",
+  sellCrop: "sell_crop",
 } as const;
 
 export function buildFarmAdvisorTools(): AiToolDeclaration[] {
@@ -87,6 +98,18 @@ export function buildFarmAdvisorTools(): AiToolDeclaration[] {
         "Search this farmer's past conversations for something specific not already covered by the context you were given. Use this only when the pre-supplied memories don't cover what you need.",
       parameters: zodToJsonSchema(recallMoreMemoriesParams),
     },
+    {
+      name: FARM_ADVISOR_TOOL_NAMES.marketDemand,
+      description:
+        "Look up REAL demand for the farmer's selected crop from the FarmConnect marketplace: how many consumers have recently requested it, how much quantity, and a suggested price based on what buyers actually offered. Use this when the farmer asks about demand, whether it's a good time to sell, or what price to ask.",
+      parameters: zodToJsonSchema(marketDemandParams),
+    },
+    {
+      name: FARM_ADVISOR_TOOL_NAMES.sellCrop,
+      description:
+        "Publish a 'now selling' listing to the FarmConnect marketplace and notify every consumer who has requested this crop. This is a REAL, farmer-visible action with real consequences (buyers get notified) — only call this when the farmer has clearly said they want to sell/list it AND has stated (or just explicitly confirmed) a quantity, unit, and price. If any of those three is missing, ask the farmer for it instead of calling this tool.",
+      parameters: zodToJsonSchema(sellCropParams),
+    },
   ];
 }
 
@@ -94,6 +117,7 @@ export interface FarmAdvisorToolContext {
   crop: Crop | null;
   profile: FarmProfile | null;
   topRecommendation: RecommendationResult | null;
+  farmerName?: string | null;
 }
 
 function readOptionalString(args: Record<string, unknown>, key: string): string | null {
@@ -150,6 +174,38 @@ export function createFarmAdvisorToolExecutor(ctx: FarmAdvisorToolContext): Tool
         return { memories };
       }
 
+      case FARM_ADVISOR_TOOL_NAMES.marketDemand: {
+        if (!ctx.crop) return { error: "No crop is selected for this farm yet." };
+        return getMarketDemand(ctx.crop.name);
+      }
+
+      case FARM_ADVISOR_TOOL_NAMES.sellCrop: {
+        if (!ctx.crop) return { error: "No crop is selected for this farm yet." };
+        const quantity = typeof args.quantity === "number" && Number.isFinite(args.quantity) && args.quantity > 0 ? args.quantity : null;
+        const unit = readOptionalString(args, "unit");
+        const price = typeof args.price === "number" && Number.isFinite(args.price) && args.price > 0 ? args.price : null;
+        if (!quantity || !unit || !price) {
+          return { error: "quantity, unit, and price are all required — ask the farmer for whichever is missing rather than guessing." };
+        }
+        const listing = await publishListing({
+          cropName: ctx.crop.name,
+          quantity,
+          unit,
+          price,
+          farmerName: ctx.farmerName ?? undefined,
+          region: ctx.profile?.region,
+        });
+        if (!listing) return { error: "Could not publish the listing right now — the marketplace may be unreachable. Tell the farmer to try again shortly." };
+        return {
+          published: true,
+          matchedRequesterCount: listing.matchedRequesterCount,
+          cropName: listing.cropName,
+          quantity: listing.quantity,
+          unit: listing.unit,
+          price: listing.price,
+        };
+      }
+
       default:
         return { error: `Unknown tool: ${name}` };
     }
@@ -169,6 +225,13 @@ export function describeFarmAdvisorToolCall(record: AiToolCallRecord): string {
       return "Checked the weather forecast";
     case FARM_ADVISOR_TOOL_NAMES.recallMemories:
       return "Searched past conversations";
+    case FARM_ADVISOR_TOOL_NAMES.marketDemand:
+      return "Checked marketplace demand";
+    case FARM_ADVISOR_TOOL_NAMES.sellCrop: {
+      const qty = (record.input as { quantity?: unknown } | undefined)?.quantity;
+      const unit = (record.input as { unit?: unknown } | undefined)?.unit;
+      return typeof qty === "number" && typeof unit === "string" ? `Published listing: ${qty} ${unit}` : "Published a marketplace listing";
+    }
     default:
       return `Checked: ${record.name}`;
   }

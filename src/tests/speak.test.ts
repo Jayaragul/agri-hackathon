@@ -50,8 +50,8 @@ describe("speak", () => {
   it("plays a long answer as multiple chunks, one after another, waiting for each to end", async () => {
     vi.spyOn(sarvamClient, "synthesizeSpeech").mockImplementation(async (text) => `data:audio/wav;base64,${text.length}`);
 
-    const sentenceA = `${"A".repeat(300)}.`;
-    const sentenceB = `${"B".repeat(300)}.`;
+    const sentenceA = `${"A".repeat(1200)}.`;
+    const sentenceB = `${"B".repeat(1200)}.`;
     const promise = speak(`${sentenceA} ${sentenceB}`);
 
     await flushMicrotasks();
@@ -92,8 +92,8 @@ describe("speak", () => {
       throw new Error("network down");
     });
 
-    const sentenceA = `${"A".repeat(300)}.`;
-    const sentenceB = `${"B".repeat(300)}.`;
+    const sentenceA = `${"A".repeat(1200)}.`;
+    const sentenceB = `${"B".repeat(1200)}.`;
     const promise = speak(`${sentenceA} ${sentenceB}`);
 
     await flushMicrotasks();

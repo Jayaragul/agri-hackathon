@@ -32,8 +32,13 @@ const PH_MAX = 14;
 const NUTRIENT_MIN = 0;
 const NUTRIENT_MAX = 500;
 
-/** Image/document types the multimodal endpoint reliably accepts. */
-const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
+/**
+ * File types the multimodal endpoint reliably accepts as `inlineData` — a photo of a physical
+ * Soil Health Card, OR a PDF (many state agri departments issue the card as a downloadable PDF
+ * rather than a physical printout; Gemini's `inlineData` part accepts `application/pdf` exactly
+ * like an image, no separate code path needed on the model side).
+ */
+const SUPPORTED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
 const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
 
 /** Accept a number only if it is finite and inside the allowed range. Never clamps. */
@@ -89,7 +94,7 @@ export function fileToInlineImage(file: File): Promise<InlineImage> {
       }
       const declaredType = typeof file?.type === "string" ? file.type : "";
       const mimeType =
-        SUPPORTED_IMAGE_TYPES.indexOf(declaredType) !== -1 ? declaredType : "image/jpeg";
+        SUPPORTED_FILE_TYPES.indexOf(declaredType) !== -1 ? declaredType : "image/jpeg";
 
       const reader = new FileReader();
       reader.onerror = () => reject(new Error("Could not read the selected file."));

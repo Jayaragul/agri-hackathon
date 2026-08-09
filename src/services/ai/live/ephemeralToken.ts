@@ -51,13 +51,19 @@ export function toCandidateSummaries(pests: PestRisk[]): Array<{ id: string; pes
 export async function fetchLiveToken(
   cropName: string,
   candidates: PestRisk[],
-  farmerContext?: FarmerContextSummary
+  farmerContext?: FarmerContextSummary,
+  resumptionHandle?: string
 ): Promise<EphemeralLiveToken> {
   const apiBase = readApiBase();
   const response = await fetch(`${apiBase}/api/live/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cropName, candidates: toCandidateSummaries(candidates), farmerContext }),
+    body: JSON.stringify({
+      cropName,
+      candidates: toCandidateSummaries(candidates),
+      farmerContext,
+      resumptionHandle,
+    }),
   });
 
   if (!response.ok) {

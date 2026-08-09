@@ -118,4 +118,78 @@ describe("createFarmAdvisorToolExecutor", () => {
     const result = await executor("not_a_real_tool", {});
     expect(result).toMatchObject({ error: expect.stringContaining("Unknown tool") });
   });
+
+  it("get_market_demand: returns an error when no crop is selected", async () => {
+    const executor = createFarmAdvisorToolExecutor({ crop: null, profile: null, topRecommendation: null });
+    const result = await executor(FARM_ADVISOR_TOOL_NAMES.marketDemand, {});
+    expect(result).toMatchObject({ error: expect.any(String) });
+  });
+
+  it("get_market_demand: degrades to a no-data shape rather than throwing when the marketplace is unreachable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("down")));
+    const executor = createFarmAdvisorToolExecutor({ crop, profile, topRecommendation });
+    const result = await executor(FARM_ADVISOR_TOOL_NAMES.marketDemand, {});
+    expect(result).toMatchObject({ cropName: crop.name, demandTier: "no-data", requestCount: 0 });
+  });
+
+  it("get_market_demand: returns the demand data from the marketplace backend", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          cropName: crop.name,
+          windowDays: 30,
+          requestCount: 5,
+          totalQuantityRequested: 40,
+          unit: "kg",
+          suggestedPricePerUnit: 28,
+          demandTier: "medium",
+        }),
+      })
+    );
+    const executor = createFarmAdvisorToolExecutor({ crop, profile, topRecommendation });
+    const result = await executor(FARM_ADVISOR_TOOL_NAMES.marketDemand, {});
+    expect(result).toMatchObject({ requestCount: 5, demandTier: "medium", suggestedPricePerUnit: 28 });
+  });
+
+  it("sell_crop: returns an error when no crop is selected", async () => {
+    const executor = createFarmAdvisorToolExecutor({ crop: null, profile: null, topRecommendation: null });
+    const result = await executor(FARM_ADVISOR_TOOL_NAMES.sellCrop, { quantity: 10, unit: "kg", price: 25 });
+    expect(result).toMatchObject({ error: expect.any(String) });
+  });
+
+  it("sell_crop: requires quantity, unit, and price rather than guessing any of them", async () => {
+    const executor = createFarmAdvisorToolExecutor({ crop, profile, topRecommendation });
+    const result = await executor(FARM_ADVISOR_TOOL_NAMES.sellCrop, { quantity: 10 });
+    expect(result).toMatchObject({ error: expect.stringContaining("required") });
+  });
+
+  it("sell_crop: publishes a listing and reports the matched requester count", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: "l1",
+          cropName: crop.name,
+          quantity: 10,
+          unit: "kg",
+          price: 25,
+          createdAt: Date.now(),
+          matchedRequesterCount: 3,
+        }),
+      })
+    );
+    const executor = createFarmAdvisorToolExecutor({ crop, profile, topRecommendation, farmerName: "Kumar" });
+    const result = await executor(FARM_ADVISOR_TOOL_NAMES.sellCrop, { quantity: 10, unit: "kg", price: 25 });
+    expect(result).toMatchObject({ published: true, matchedRequesterCount: 3, quantity: 10, unit: "kg", price: 25 });
+  });
+
+  it("sell_crop: reports failure honestly rather than claiming success when publishing fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+    const executor = createFarmAdvisorToolExecutor({ crop, profile, topRecommendation });
+    const result = await executor(FARM_ADVISOR_TOOL_NAMES.sellCrop, { quantity: 10, unit: "kg", price: 25 });
+    expect(result).toMatchObject({ error: expect.any(String) });
+  });
 });

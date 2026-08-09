@@ -90,6 +90,7 @@ const FarmAdvisor: React.FC = () => {
         crop: selectedCrop ?? null,
         profile: profile ?? null,
         topRecommendation,
+        farmerName,
       })
       const outcome = await getA2AOrchestrator().dispatch<FarmAdvisorAnswer>('answer-farm-question', {
         question: questionText,

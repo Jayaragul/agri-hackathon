@@ -131,10 +131,10 @@ describe("useVoiceConversation", () => {
     );
   });
 
-  it("speaks a greeting once when there is no prior history", async () => {
+  it("speaks a greeting once when there is no prior history, in Tamil", async () => {
     renderHook(() => useVoiceConversation());
     await waitFor(() => expect(mocks.speak).toHaveBeenCalledOnce());
-    expect(mocks.speak.mock.calls[0][0]).toContain("Vanakkam, Meena");
+    expect(mocks.speak.mock.calls[0][0]).toContain("வணக்கம், Meena");
   });
 
   it("does not greet when history already exists", async () => {
@@ -162,6 +162,21 @@ describe("useVoiceConversation", () => {
     expect(mocks.speak).toHaveBeenCalledWith("Sow now.");
     expect(result.current.answerText).toBe("Sow now.");
     expect(result.current.typedQuestion).toBe("");
+  });
+
+  it("keeps typed questions working when the server reports that voice is not configured", async () => {
+    mocks.getVoiceStatus.mockResolvedValue({ configured: false, languageCode: "ta-IN" });
+    const { result } = renderHook(() => useVoiceConversation());
+    await waitFor(() => expect(result.current.voiceReady).toBe(false));
+
+    act(() => result.current.setTypedQuestion("What can I grow in red soil?"));
+    act(() => result.current.handleSend());
+
+    await waitFor(() => expect(result.current.phase).toBe("idle"));
+    expect(mocks.dispatch).toHaveBeenCalledWith(
+      "answer-farm-question",
+      expect.objectContaining({ question: "What can I grow in red soil?" })
+    );
   });
 
   it("handleSend does nothing for an empty or whitespace-only question", async () => {

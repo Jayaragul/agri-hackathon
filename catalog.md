@@ -419,6 +419,99 @@ already correct throughout); kept because it costs nothing and removes a real cl
 
 ---
 
+## Storage & Persistence Architecture
+
+Krishi Mitra persists through THREE independent, individually-optional backends, resolved once
+at server startup (`server/src/index.ts`'s `main()`) and injected into whichever routes need
+them — never re-evaluated per request, and never required for the app to run:
+
+| Backend | Module | Used for | Enabled by | Local/unconfigured fallback |
+|---|---|---|---|---|
+| Object storage (JSON blobs) | `storage/bucketStore.ts` — `StorageBackend` | Session profile + chat threads (`sessions/{sessionId}/...`) | `GCS_BUCKET_NAME` | In-process `Map`, lost on restart |
+| Object storage (binary files) | `storage/fileStore.ts` — `FileBackend` | Original uploaded soil-report photos/PDFs (`soil-reports/{sessionId}/{reportId}.{ext}`) | Same `GCS_BUCKET_NAME`, different prefix, same bucket | In-process `Map<string, Buffer>`, lost on restart |
+| Document store | `storage/documentStore.ts` — `DocumentBackend` | Marketplace orders/listings, soil-report extraction metadata — anything queried or written concurrently by more than one caller | `FIRESTORE_ENABLED=true` | In-process nested `Map`, lost on restart |
+
+**Why three, not one.** Cloud Storage's `StorageBackend` models exactly one JSON blob per path —
+perfect for "this session's profile," terrible for "the shared list of every marketplace order,"
+because a shared list means every write is a read-modify-write of the SAME object, and two Cloud
+Run instances doing that concurrently can clobber each other's update (this was a real, documented
+limitation of the marketplace store's first design). Firestore's `DocumentBackend` gives every
+record — one order, one listing, one soil-report reading — its OWN document: concurrent writers
+touch different documents, so there is nothing to race, and `createIfAbsent()` makes an idempotent
+insert atomic at the database level rather than a client-side check-then-write gap. Binary file
+bytes never belong in either JSON-shaped abstraction, hence `FileBackend`.
+
+**Choosing where new data goes**: ask "does more than one process ever write to the SAME record
+concurrently, or does anything need to query across many records?" — yes → `DocumentBackend`
+(Firestore). "Is this one blob written by one session, read back later by the same session?" —
+yes → `StorageBackend` (GCS JSON). "Is this raw binary (a photo, a PDF, audio)?" — `FileBackend`
+(GCS binary), and record any structured metadata about it (who uploaded it, what was extracted)
+in `DocumentBackend` alongside a `filePath` pointer, never inline as base64 in a document.
+
+**Enabling in production** (`deploy/DEPLOY.md` has the full runbook): `GCS_BUCKET_NAME` for the
+bucket (shared by both object-storage backends), `FIRESTORE_ENABLED=true` PLUS a one-time
+`gcloud firestore databases create --location=... --type=firestore-native` per GCP project
+(Firestore Native mode isn't auto-provisioned the way a bucket is — hence the explicit opt-in
+flag rather than inferring "configured" from ADC alone, mirroring `GcsStorageBackend`'s own
+reasoning for why it doesn't infer from "some GCP credential exists" either).
+
+**Auditing/exporting data outside the running app**: `.claude/skills/krishi-mitra-storage/` — a
+Claude Code skill + Python CLI covering both Firestore collections and the GCS soil-report
+bucket, for the things the Node server deliberately never does itself (bulk export, backup,
+listing every record) — see that skill's `SKILL.md` for commands.
+
+---
+
+## FarmConnect Marketplace Integration
+
+- **Location**: `server/src/services/marketplaceStore.ts` + `server/src/storage/marketplaceTypes.ts` (backend, Firestore-backed) + `server/src/routes/marketplaceRoutes.ts` (API) + `server/src/services/marketDemand.ts` (deterministic analysis) + `src/services/marketplace/marketplaceClient.ts` (Krishi Mitra's frontend client) + `marketplace/` (FarmConnect — the independently-deployed, plain-JS consumer/farmer app; no server of its own).
+- **What it is**: the shared backend seam between two separate apps. FarmConnect's `marketplace/js/bridge.js` pushes every new consumer request here (`POST /api/marketplace/orders/sync`), which is what lets a farmer ask Krishi Mitra "what's the demand for my crop" and get a REAL number back instead of nothing. Krishi Mitra pushes the other direction (`POST /api/marketplace/listings`) when a farmer says "let's sell it," and FarmConnect's bridge polls `GET /api/marketplace/listings/new` to turn each into a local consumer notification.
+- **Boundary**: **Perceives only.** `marketDemand.ts`'s `analyzeMarketDemand()` is a pure function over the raw synced orders — request count, total quantity, most-common unit, and a **median** suggested price, purely arithmetic, no model call. See [[krishi-mitra-ai-boundary]]: this is exactly the kind of number a farmer-facing tool must never let an LLM originate or adjust.
+- **Persistence**: `DocumentBackend` (`server/src/storage/documentStore.ts`) — Firestore when `FIRESTORE_ENABLED=true`, an in-process fallback otherwise, resolved once at startup and passed into `createMarketplaceRoutes(documents)`. Two collections (source of truth: `marketplaceTypes.ts`):
+
+  ```
+  marketplace_orders    document id = externalId — atomic createIfAbsent() makes a retried sync race-free
+  marketplace_listings  document id = server-generated uuid
+  ```
+
+  Each document IS the permanent record (unlike the earlier GCS-blob design's "bounded index vs.
+  unbounded dated record" split — that distinction no longer exists, since Firestore doesn't
+  require a single shared blob per collection). `MarketplaceStore` is stateless between calls —
+  every method queries the collection directly rather than trusting a long-lived in-memory cache
+  — so demand numbers and the bridge's poll stay correct across a Cloud Run restart AND across
+  multiple concurrently-running instances, with no read-modify-write race on a shared array left
+  to lose (this is the actual fix for the limitation the previous GCS-backed design documented
+  here; see the git history of this file if you want the old design for reference).
+- **Input hygiene**: `externalId` (FarmConnect's own order id) is used directly as this order's Firestore document id, so `marketplaceRoutes.ts` restricts it to `^[A-Za-z0-9_-]{1,100}$` — the same "reject path-breaking characters at the boundary" discipline `sessionRoutes.ts` already applies to `sessionId`.
+- **User data note**: FarmConnect itself has no server or auth — `marketplace/js/store.js` keeps every user (name, phone number, role) and "login" (phone-number lookup, no password) in the browser's own `localStorage`. Only `consumerId`/`consumerName` cross the bridge into Firestore, as part of a synced order. This is demo-scope by design, not a real auth system — never store anything in FarmConnect beyond what a hackathon demo needs.
+- **Auditing the data**: see the `krishi-mitra-storage` Claude Code skill (`.claude/skills/krishi-mitra-storage/SKILL.md`) — its Python CLI queries these Firestore collections directly for export/backup/debugging, the one thing the Node server deliberately never does itself (no bucket/collection-wide "list" call on any farmer-facing request path).
+- **Tests**: `server/src/services/marketplaceStore.test.ts` (idempotent sync — including a concurrent-double-sync race test — fuzzy crop matching, listing queries — using the same `MemoryDocumentBackend` a real Firestore-less deploy falls back to), `server/src/services/marketDemand.test.ts` (pure demand arithmetic), `server/src/storage/documentStore.test.ts` (the backend abstraction itself).
+
+---
+
+## Soil Report Upload & Persistence
+
+- **Location**: `src/services/ai/providers/GeminiSoilReportExtractor.ts` + `src/services/ai/tasks/extractSoilReportTask.ts` (extraction — unchanged, pre-existing) + `src/features/voice-mode/useVoiceConversation.ts`'s `uploadLabReport` (the ONE UI entry point for this today, in Audio Mode) + `src/services/soilReport/soilReportClient.ts` (new persistence client) + `server/src/routes/soilReportRoutes.ts` + `server/src/storage/soilReportTypes.ts` (new backend persistence).
+- **What it is**: a farmer photographs (or uploads a PDF of) their Soil Health Card from Audio Mode's "Lab report" button. `GeminiSoilReportExtractor` reads it via the SAME `extract-soil-report` A2A skill/harness every other AI call in this app goes through — nothing new was built for the extraction itself, since it already worked correctly and already routes through `ServerProxyTransport`/`server/src/routes/aiRoutes.ts` in a production deploy (`VITE_AI_TRANSPORT=server`). What was missing, and is what this section documents: **the original file and the extracted reading were never durably stored anywhere** — only an ephemeral `localStorage` copy of the reading on one device, and the file itself was discarded after the request.
+- **Boundary**: **Perceives only**, unchanged — see [[krishi-mitra-ai-boundary]] and `GeminiSoilReportExtractor.ts`'s own header (`toPartialProfile` independently re-validates every field; a rejected value is omitted, never clamped or guessed, so a farmer's own entry is never silently overwritten). This section adds durability, not a new AI capability, and never lets a persisted reading skip the same validation a fresh one gets — `server/src/storage/soilReportTypes.ts`'s `SoilReportExtractionSchema` re-validates the shape the client sends, the same "never trust the network, even your own frontend" posture `sessionRoutes.ts` already applies.
+- **File types**: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, and now **`application/pdf`** — many state agri departments issue the Soil Health Card as a downloadable PDF rather than a physical printout, and Gemini's `inlineData` part accepts a PDF exactly like an image. The upload button's `accept` attribute and `GeminiSoilReportExtractor.ts`'s allow-list were both extended together; anything outside this list is coerced to `image/jpeg` (unchanged fallback behaviour) rather than rejected client-side.
+- **Persistence, split across both backends by what each is good at**:
+  - The ORIGINAL file → `FileBackend` (`storage/fileStore.ts`) at `soil-reports/{sessionId}/{reportId}.{ext}` — binary, occasionally re-examined by a human, never queried.
+  - The EXTRACTED structured reading (`ph`, N/P/K, confidence, warnings, provenance) → `DocumentBackend`'s `soil_reports` collection, keyed by a server-generated `reportId`, queryable by `sessionId` — this is what makes "give me this farmer's latest reading" a real query instead of "hope the right browser still has it in `localStorage`."
+  - `POST /api/soil-reports` does both writes in one call (client sends the file bytes it already has plus the extraction result it already computed — no second Gemini call, no duplicated prompt/schema on the server). `GET /api/soil-reports/:sessionId/latest` reads the newest one back.
+- **Cross-device restore**: on mount, `useVoiceConversation` checks `services/identity/labReport.ts`'s local copy first; only if THIS device has never captured one does it call `getLatestSoilReport(sessionId)` — so a farmer who uploaded from one phone and opens the app on another (same anonymous `sessionId`, since that's `localStorage`-scoped per device too — genuinely cross-device restore requires the farmer to still be on session ids that happen to match, which today means the same browser profile; a real account system would be the next step here, not something this pass added) sees their reading rather than nothing. Never overwrites an existing local reading.
+- **Size limit**: 10MB decoded (`MAX_FILE_BYTES` in `soilReportRoutes.ts`) — generous for a phone photo or a multi-page scanned PDF. The server's JSON body limit was raised from 5MB to 15MB (`index.ts`) to give the base64-inflated (~4/3) request room to arrive before that check runs.
+- **Never blocks the visible feature**: `persistSoilReport()` is fire-and-forget from `uploadLabReport` — the farmer's reading is already applied to `labReport` state before the persistence call is even made, so a Firestore/GCS outage degrades to "not durably saved yet," never to "the upload failed," mirroring `marketplaceClient.ts`'s posture exactly.
+- **Tests**: `server/src/storage/fileStore.test.ts` (binary round-trip fidelity), `server/src/storage/documentStore.test.ts` (query semantics the routes depend on). No new frontend UI was built beyond extending the existing Audio Mode upload button — the wizard's own dedicated soil-report step referenced in `GeminiSoilReportExtractor.ts`'s comments remains unbuilt; see "Known gaps" below.
+
+**Known gap, stated plainly**: this is still the ONLY upload entry point in the app (Audio Mode's
+"Lab report" button) — the pre-sowing wizard has no dedicated soil-report upload step of its own,
+despite `toPartialProfile`'s existence implying one was planned. A farmer who never opens Audio
+Mode still has no way to photograph a Soil Health Card. Fixing that is a UI task for the wizard,
+not a storage task, and out of scope for this pass.
+
+---
+
 ## How a new agent gets added
 
 1. Write the task (`buildPrompt`, `schema`, `fallback`, `cacheKey`) under `src/services/ai/tasks/`, same as the four above.

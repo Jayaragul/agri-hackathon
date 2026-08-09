@@ -156,6 +156,19 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   padding: 0 20px;
 }
 
+/* Audio Mode's `.voice-shell` is a deliberately full-bleed, edge-to-edge dark surface (it applies
+   its own safe-area-aware padding internally) — nesting it inside `.app-container`'s 20px/16px
+   side padding left a visible strip of the light theme's white `--background` down both edges of
+   an otherwise all-dark mobile screen. Zeroing the parent's padding for this one stage is what
+   actually removes it; nothing about `.voice-shell` itself was wrong. */
+/* !important: the `@media (max-width: 640px) { .app-container { padding: 0 16px } }` rule further
+   down this file has equal selector specificity and comes later in source order, so it would
+   otherwise win at exactly the mobile widths this fix targets and silently reintroduce the white
+   side strips there. */
+.app-container-immersive {
+  padding: 0 !important;
+}
+
 /* Header */
 .app-header {
   padding: 24px 0;
@@ -225,6 +238,29 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 .onboarding-brand-stripe {
   width: 132px;
   margin: 0 auto 20px;
+}
+
+/* Audio Mode's dark-header variant — `.app-container-immersive` zeroes the parent's side
+   padding, so this restores an inset (safe-area-aware, matching `.voice-shell`'s own) and swaps
+   the light theme's white bar + dark text for the SAME near-black tone `.voice-shell` uses, so
+   there is no visible seam between the header and the voice screen beneath it. */
+.app-header-dark {
+  background: #0a0a0c;
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  padding-top: max(16px, env(safe-area-inset-top));
+  border-bottom: 1px solid rgba(242, 242, 243, 0.08);
+}
+.app-header-dark h1 {
+  color: #F2F2F3;
+}
+
+.btn-secondary-dark {
+  background: rgba(242, 242, 243, 0.08) !important;
+  color: #F2F2F3 !important;
+}
+.btn-secondary-dark:hover {
+  background: rgba(242, 242, 243, 0.16) !important;
 }
 
 /* Stepper */
@@ -881,6 +917,8 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   border-radius: 50%;
   border: none;
   color: #fff;
+  /* Google Blue -> Google Green — the same idle waveform/mic pairing below, so the button a
+     farmer just tapped visually matches the state it triggers. */
   background: linear-gradient(135deg, #4285F4, #34A853);
   display: flex;
   align-items: center;
@@ -903,12 +941,18 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 
 /* Scrollable message history — real conversation memory the farmer can see, not just the latest
    answer. Bubbles are alignment/color mirrors of FarmAdvisor.tsx's light-theme pattern, redone
-   in this screen's own dark, translucent-white / violet-gradient vocabulary. */
+   in this screen's own dark, translucent-white / violet-gradient vocabulary.
+   Deliberately a BOUNDED max-height with its own scrollbar, not `flex: 1` — `.voice-shell` sits
+   in the app's normal page flow (below a sticky header, above the disclaimer footer), not in a
+   height-clamped viewport, so a flexed-to-fill transcript has no real ceiling and just grows the
+   whole page taller as the conversation gets longer, pushing the mic/compose bar further down
+   with every turn. Capping it here keeps the mic and compose bar within reach regardless of how
+   long the conversation gets — only the transcript itself scrolls. */
 .voice-transcript {
   width: 100%;
   max-width: 480px;
-  flex: 1;
-  min-height: 0;
+  min-height: 64px;
+  max-height: 38vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -1041,7 +1085,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 .voice-waveform-wrap.recording { --orb-1: #EA4335; --orb-2: #FBBC05; }
 .voice-waveform-wrap.recording .voice-waveform-bar { animation-duration: 0.7s; }
 
-.voice-waveform-wrap.thinking { --orb-1: #4285F4; --orb-2: #34A853; }
+.voice-waveform-wrap.thinking { --orb-1: #4285F4; --orb-2: #FBBC05; }
 .voice-waveform-wrap.thinking .voice-waveform-bar { animation-duration: 1.1s; }
 
 .voice-waveform-wrap.speaking { --orb-1: #34A853; --orb-2: #4285F4; }
@@ -1094,8 +1138,8 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 }
 .voice-mic-standalone.thinking {
   --orb-1: #4285F4;
-  --orb-2: #34A853;
-  box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.3), 0 0 24px 4px rgba(66, 133, 244, 0.25);
+  --orb-2: #FBBC05;
+  box-shadow: 0 0 0 4px rgba(251, 188, 5, 0.3), 0 0 24px 4px rgba(251, 188, 5, 0.25);
   animation: none;
 }
 .voice-mic-standalone.speaking {
@@ -1109,7 +1153,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 @media (max-width: 480px) {
   .voice-shell { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
   .voice-top-bubble { max-width: 100%; }
-  .voice-transcript { max-width: 100%; }
+  .voice-transcript { max-width: 100%; max-height: 32vh; }
   .voice-hero { max-width: 100%; gap: 20px; }
   .voice-mic-standalone { width: 84px; height: 84px; }
   .voice-msg { max-width: 90%; font-size: 13px; }
@@ -1121,6 +1165,30 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   .voice-mic-standalone { width: 76px; height: 76px; }
   .voice-waveform-wrap { height: 52px; gap: 5px; }
   .voice-greeting { margin-bottom: 12px; }
+}
+
+@media (max-width: 340px) {
+  .voice-shell { padding-left: 12px; padding-right: 12px; }
+  .voice-top-bubble { padding-left: 14px; }
+  .voice-top-bubble input { font-size: 13px; }
+  .voice-send-circle { width: 40px; height: 40px; }
+  .voice-mic-standalone { width: 68px; height: 68px; }
+  .voice-lab-report-btn span { display: none; }
+}
+
+/* Short-viewport phones (landscape, or a small screen behind an on-screen nav bar) — the
+   transcript is the one element with real room to give up before the mic/compose bar get
+   cramped or clipped below the fold. */
+@media (max-height: 700px) {
+  .voice-transcript { max-height: 24vh; }
+  .voice-hero { gap: 14px; }
+  .voice-mic-standalone { animation-duration: 2.6s; }
+}
+
+@media (max-height: 560px) {
+  .voice-transcript { max-height: 18vh; }
+  .voice-mic-standalone { width: 64px; height: 64px; }
+  .voice-waveform-wrap { height: 40px; }
 }
 
 /* Action Plan Printing */
