@@ -101,7 +101,7 @@ export function useVoiceConversation(): VoiceConversationState {
         setMessages(history);
         if (history.length === 0 && !hasGreeted.current) {
           hasGreeted.current = true;
-          const name = farmerName ? `Vanakkam, ${farmerName}!` : "Vanakkam!";
+          const name = farmerName ? `வணக்கம், ${farmerName}!` : "வணக்கம்!";
           // A farmer who never walks the profile wizard (Audio Mode is the default landing
           // screen, so that may be most farmers) otherwise gets nothing but generic answers
           // forever — asking this up front is what makes `declaredSituation` ever get set.
@@ -110,13 +110,16 @@ export function useVoiceConversation(): VoiceConversationState {
           // heavy-rain warning), lead with it here — the one place every farmer, audio-only or
           // not, is guaranteed to hear it. Weather only resolves once `profile.region` is known
           // (the wizard, or nothing yet — `getWeatherProactiveAlerts` returns `[]` either way).
+          // NOTE: `describeProactiveAlert` itself still returns English (it's shared with visual
+          // UI chips elsewhere) — the surrounding phrase is Tamil, this one embedded clause is a
+          // known, scoped exception, not an oversight.
           const weatherAlerts = await getWeatherProactiveAlerts(profile?.region);
           const nearestAlert = [...getFarmContextSnapshot().upcomingAlerts, ...weatherAlerts][0];
           if (cancelled) return;
-          const headsUp = nearestAlert ? ` Heads up — ${describeProactiveAlert(nearestAlert)}.` : "";
+          const headsUp = nearestAlert ? ` குறிப்பு — ${describeProactiveAlert(nearestAlert)}.` : "";
           const greeting = declaredSituation
-            ? `${name} I'm Thulir.${headsUp} Push to speak, or type below, and ask me anything about your farm.`
-            : `${name} I'm Thulir.${headsUp} To give you better answers, tell me what crop you're growing and where your farm is — or just ask me anything.`;
+            ? `${name} நான் துளிர்.${headsUp} பேச பொத்தானை அழுத்தவும், அல்லது கீழே தட்டச்சு செய்யவும் — உங்கள் பண்ணையைப் பற்றி எதுவும் கேளுங்கள்.`
+            : `${name} நான் துளிர்.${headsUp} சிறந்த பதில் தர, நீங்கள் என்ன பயிர் செய்கிறீர்கள், உங்கள் பண்ணை எங்கே உள்ளது என்று சொல்லுங்கள் — அல்லது எதுவும் கேளுங்கள்.`;
           void speak(greeting);
         }
       })

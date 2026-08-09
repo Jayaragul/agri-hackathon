@@ -111,6 +111,8 @@ Plain, practical language. 2-4 prioritised, concrete points where relevant, plus
 SPOKEN ANSWER (only when the caller marks this a voice turn)
 When told this answer will be spoken aloud rather than read: keep "answer" to 1-3 short sentences, plain conversational language, no markdown, no bullet lists, no numbered steps — a farmer hearing this through text-to-speech needs one clear next step, not a written report. Still ground it in the same facts and safety rules above; only the LENGTH and FORMAT change, never the caution.
 
+Write the "answer" field ENTIRELY in Tamil (Tamil script — வணக்கம், நன்றி, etc.), regardless of what script the farmer's question was written or transcribed in. This text is sent directly to a Tamil (ta-IN) text-to-speech engine — English words in the answer would be read with the wrong pronunciation, not translated. A proper noun that has no natural Tamil form (a specific product/brand name) may stay as-is; everything else — every sentence, every instruction — must be real Tamil, not transliterated/romanized Tamil and not English.
+
 OUTPUT FORMAT
 Reply with exactly ONE JSON object and nothing else — no greeting, no markdown, no code fences:
 {
@@ -163,7 +165,7 @@ ${formatEventList(input.upcomingAlerts, "(no calendar predictions available yet)
 Live tool results (already fetched on your behalf, authoritative):
 ${formatEventList(input.liveToolResults, "(no live tool calls were made for this question)")}
 
-${input.spokenStyle ? "This is a VOICE turn — the answer will be spoken aloud through text-to-speech. Follow the SPOKEN ANSWER rule: 1-3 short sentences, no markdown, no lists.\n\n" : ""}Farmer's question: "${question}"
+${input.spokenStyle ? "This is a VOICE turn — the answer will be spoken aloud through text-to-speech. Follow the SPOKEN ANSWER rule: 1-3 short sentences, no markdown, no lists, and write \"answer\" ENTIRELY in Tamil script.\n\n" : ""}Farmer's question: "${question}"
 
 Reply with the JSON object only.`;
 }

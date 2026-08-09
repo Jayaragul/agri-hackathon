@@ -131,10 +131,10 @@ describe("useVoiceConversation", () => {
     );
   });
 
-  it("speaks a greeting once when there is no prior history", async () => {
+  it("speaks a greeting once when there is no prior history, in Tamil", async () => {
     renderHook(() => useVoiceConversation());
     await waitFor(() => expect(mocks.speak).toHaveBeenCalledOnce());
-    expect(mocks.speak.mock.calls[0][0]).toContain("Vanakkam, Meena");
+    expect(mocks.speak.mock.calls[0][0]).toContain("வணக்கம், Meena");
   });
 
   it("does not greet when history already exists", async () => {
