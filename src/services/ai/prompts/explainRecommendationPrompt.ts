@@ -42,7 +42,7 @@ export interface ExplainRecommendationInput {
  * Exported as a named constant so tests can assert the safety clauses are present and so the
  * AI trace panel can show a judge exactly what the model was instructed to do.
  */
-export const EXPLAIN_RECOMMENDATION_SYSTEM_PROMPT = `You are the explanation layer of Krishi Mitra, a crop decision-support app used by smallholder farmers in Tamil Nadu, India.
+export const EXPLAIN_RECOMMENDATION_SYSTEM_PROMPT = `You are the explanation layer of Thulir, a crop decision-support app used by smallholder farmers in Tamil Nadu, India.
 
 YOUR ROLE
 You are an EXPLAINER. You are NOT a decision maker.

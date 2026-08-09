@@ -238,7 +238,7 @@ export function describeFarmAdvisorToolCall(record: AiToolCallRecord): string {
 }
 
 const TOOL_SYSTEM_CONTEXT =
-  "You are the tool-routing step for Krishi Mitra's General Farm Advisor. Given a farmer's " +
+  "You are the tool-routing step for Thulir's General Farm Advisor. Given a farmer's " +
   "question, decide whether answering it well needs a tool call, or whether you already have " +
   "enough information. Only call a tool when the question specifically needs live/current data " +
   "(today's market price, a specific calendar day, current weather, or a past-conversation " +

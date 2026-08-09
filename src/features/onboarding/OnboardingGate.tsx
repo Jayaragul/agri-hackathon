@@ -4,7 +4,7 @@ import { Loader2, Mic, Pencil, Sprout, Video, Volume2 } from 'lucide-react'
 import { useOnboarding } from './useOnboarding'
 
 /**
- * First-run gate shown before the rest of the app: a farmer opening Krishi Mitra for the very
+ * First-run gate shown before the rest of the app: a farmer opening Thulir for the very
  * first time is asked their name (by voice when Sarvam is configured, always with a plain text
  * fallback), then picks a primary mode — Audio (conversational voice) or Video (live camera,
  * Crop Doctor). Renders exactly once per device: gated on `farmStore.onboardingComplete` (see
@@ -46,21 +46,13 @@ const OnboardingGate: React.FC<OnboardingGateProps> = ({ onModeChosen }) => {
 
   return (
     <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        background: 'linear-gradient(160deg, var(--background), var(--muted))',
-      }}
+      className="onboarding-shell"
     >
-      <div ref={cardRef} className="card" style={{ maxWidth: '480px', width: '100%', padding: '32px', textAlign: 'center' }}>
-        <div className="logo-emoji" style={{ background: 'var(--muted)', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '16px', margin: '0 auto 16px' }}>
-          🌾
-        </div>
+      <div ref={cardRef} className="card onboarding-card" style={{ maxWidth: '480px', width: '100%', padding: '32px', textAlign: 'center' }}>
+        <img className="brand-logo brand-logo-onboarding" src="/thulir-logo.png" alt="Thulir logo" />
+        <div className="brand-stripe onboarding-brand-stripe" />
         <h1 style={{ fontSize: '22px', marginBottom: '4px' }}>
-          Welcome to Krishi <span className="gradient-text">Mitra</span>
+          Welcome to <span className="gradient-text">Thulir</span>
         </h1>
 
         {step === 'ask-name' && (
@@ -144,7 +136,7 @@ const OnboardingGate: React.FC<OnboardingGateProps> = ({ onModeChosen }) => {
         {step === 'choose-mode' && (
           <>
             <p style={{ color: 'var(--muted-foreground)', marginBottom: '24px', fontSize: '15px' }}>
-              How would you like to talk with Krishi Mitra?
+              How would you like to talk with Thulir?
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button

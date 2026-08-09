@@ -1,4 +1,4 @@
-# Deploying Krishi Mitra to Google Cloud Run
+# Deploying Thulir to Google Cloud Run
 
 This is a runbook, not a script. Every command below is meant to be run by a human who has
 their own GCP project and is authenticated with `gcloud` — nothing here has been executed on
@@ -53,7 +53,7 @@ Skip this section entirely if you're fine with the in-memory/localStorage fallba
 holds session snapshots/chat AND uploaded soil-report photos/PDFs (two prefixes, one bucket).
 
 ```bash
-export BUCKET_NAME="${PROJECT_ID}-krishi-mitra-data"
+export BUCKET_NAME="${PROJECT_ID}-thulir-data"
 gsutil mb -l "$REGION" "gs://${BUCKET_NAME}"
 ```
 
@@ -101,7 +101,7 @@ backend instead of Google directly — see the build args in step 3.
 From the **project root** (where the `Dockerfile` lives — `C:\Users\Lenovo\Downloads\agri hackathon\agri hackathon` locally):
 
 ```bash
-gcloud run deploy krishi-mitra \
+gcloud run deploy thulir \
   --source . \
   --region "$REGION" \
   --allow-unauthenticated \
@@ -157,12 +157,12 @@ Skip whichever step corresponds to a backend you didn't enable.
 ## 5. Verify
 
 ```bash
-export SERVICE_URL=$(gcloud run services describe krishi-mitra --region "$REGION" --format='value(status.url)')
+export SERVICE_URL=$(gcloud run services describe thulir --region "$REGION" --format='value(status.url)')
 curl "${SERVICE_URL}/healthz"
 # -> {"status":"ok"}
 ```
 
-Open `$SERVICE_URL` in a browser — you should see the Krishi Mitra app. If you configured a
+Open `$SERVICE_URL` in a browser — you should see the Thulir app. If you configured a
 bucket, filling in a farm profile and refreshing the page should restore it (check the "Welcome
 back" banner on the Farm Profile screen); if you check the bucket in the Cloud Console, you
 should see objects appear under `sessions/<some-uuid>/profile.json`. If you also configured
@@ -177,7 +177,7 @@ without opening the console.
 
 ```bash
 # Remove the Cloud Run service
-gcloud run services delete krishi-mitra --region "$REGION"
+gcloud run services delete thulir --region "$REGION"
 
 # Remove the bucket and everything in it (only if you created one)
 gsutil rm -r "gs://${BUCKET_NAME}"

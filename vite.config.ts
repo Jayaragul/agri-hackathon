@@ -23,8 +23,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Krishi Mitra',
-        short_name: 'KrishiMitra',
+        name: 'Thulir',
+        short_name: 'Thulir',
         description: 'AI Farm Decision Support for Indian Farmers',
         theme_color: '#4285F4',
         background_color: '#FFFFFF',

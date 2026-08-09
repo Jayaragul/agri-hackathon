@@ -115,8 +115,8 @@ export function useVoiceConversation(): VoiceConversationState {
           if (cancelled) return;
           const headsUp = nearestAlert ? ` Heads up — ${describeProactiveAlert(nearestAlert)}.` : "";
           const greeting = declaredSituation
-            ? `${name} I'm Krishi Mitra.${headsUp} Push to speak, or type below, and ask me anything about your farm.`
-            : `${name} I'm Krishi Mitra.${headsUp} To give you better answers, tell me what crop you're growing and where your farm is — or just ask me anything.`;
+            ? `${name} I'm Thulir.${headsUp} Push to speak, or type below, and ask me anything about your farm.`
+            : `${name} I'm Thulir.${headsUp} To give you better answers, tell me what crop you're growing and where your farm is — or just ask me anything.`;
           void speak(greeting);
         }
       })

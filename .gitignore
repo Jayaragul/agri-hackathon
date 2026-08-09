@@ -15,3 +15,6 @@ server/dist
 __pycache__/
 *.pyc
 
+# Cloud Run deploy-time secrets — see deploy/env-vars.example.yaml for the template that IS committed
+deploy/env-vars.yaml
+

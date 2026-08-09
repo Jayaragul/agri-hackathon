@@ -152,7 +152,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
           disabled={busy || voiceReady === false}
           className={`voice-mic-standalone${stateClass}`}
           aria-label={phase === 'recording' ? 'Stop recording' : 'Start voice question'}
-          title={phase === 'recording' ? 'Stop recording' : 'Tap to ask Krishi Mitra by voice'}
+          title={phase === 'recording' ? 'Stop recording' : 'Tap to ask Thulir by voice'}
         >
           {busy ? <Loader2 size={22} className="spin" /> : phase === 'recording' ? <Square size={18} /> : <Mic size={22} />}
         </button>

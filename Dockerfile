@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Krishi Mitra — single-container build for Google Cloud Run.
+# Thulir — single-container build for Google Cloud Run.
 #
 # Three stages:
 #   1. frontend-build : npm ci + `npm run build` at the project root -> /app/dist (the Vite SPA)
