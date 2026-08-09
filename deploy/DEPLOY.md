@@ -105,7 +105,7 @@ gcloud run deploy thulir \
   --source . \
   --region "$REGION" \
   --allow-unauthenticated \
-  --set-env-vars GCS_BUCKET_NAME="${BUCKET_NAME}",FIRESTORE_ENABLED=true,GEMINI_API_KEY="${GEMINI_API_KEY}" \
+  --set-env-vars GCS_BUCKET_NAME="${BUCKET_NAME}",FIRESTORE_ENABLED=true,GEMINI_API_KEY="${GEMINI_API_KEY}",SARVAM_API_KEY="${SARVAM_API_KEY}",GOOGLE_WEATHER_API_KEY="${GOOGLE_WEATHER_API_KEY}" \
   --build-env-vars VITE_AI_TRANSPORT=server
 ```
 

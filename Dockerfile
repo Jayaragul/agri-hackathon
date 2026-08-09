@@ -28,6 +28,10 @@ RUN npm ci
 COPY . .
 # Do not let the server/ subtree influence the frontend build.
 RUN rm -rf server
+# Keep the browser on the server proxy in production. This default also makes a
+# clean Cloud Build safe; callers can override it with --build-arg when needed.
+ARG VITE_AI_TRANSPORT=server
+ENV VITE_AI_TRANSPORT=${VITE_AI_TRANSPORT}
 RUN npm run build
 
 # ---------------------------------------------------------------------------
