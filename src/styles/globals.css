@@ -543,6 +543,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 .alert-warning { background: var(--color-amber-50); border-left: 4px solid var(--color-amber-600); }
 .alert-danger { background: var(--color-red-50); border-left: 4px solid var(--color-red-600); }
 .alert-info { background: rgba(66, 133, 244, 0.05); border-left: 4px solid var(--accent); flex-wrap: wrap; }
+.alert-success { background: var(--color-green-100); border-left: 4px solid var(--color-green-600); }
 
 .alert-title { font-weight: 600; margin-bottom: 4px; color: var(--foreground); }
 .alert-desc { font-size: 15px; color: var(--muted-foreground); }

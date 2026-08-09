@@ -9,15 +9,19 @@
 // come straight from `engine/digitalTwin/*` — this component only lays out
 // what the engine decided.
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { DIGITAL_TWIN_AREAS } from '../../data/sample/digitalTwinFields'
 import { getDigitalTwinCrop } from '../../data/sample/digitalTwinCrops'
 import { assessArea, type AreaAssessment } from '../../engine/digitalTwin/healthModel'
 import { computeGrowthState } from '../../engine/digitalTwin/growthModel'
+import { buildCommunityAlerts } from '../../engine/communityPestAlerts'
+import { getCommunityNetwork } from '../../services/community/communityClient'
 import { PixelThumbnail } from './pixel/PixelCanvas'
-import { DistrictMap } from './DistrictMap'
+import { LiveMap } from './LiveMap'
+import { CommunityAlerts } from './CommunityAlerts'
 import type { Field, MonitoringArea } from '../../domain/digitalTwin/models'
+import type { SimulatedCommunityFarmer } from '../../domain/digitalTwin/communityModels'
 
 interface AreaSummary {
   area: MonitoringArea
@@ -46,6 +50,24 @@ export interface AreaSelectProps {
 
 export function AreaSelect({ onPick }: AreaSelectProps) {
   const [query, setQuery] = useState('')
+  const [communityFarmers, setCommunityFarmers] = useState<SimulatedCommunityFarmer[]>([])
+  const [communityLoading, setCommunityLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    getCommunityNetwork()
+      .then((network) => {
+        if (!cancelled) setCommunityFarmers(network.farmers)
+      })
+      .finally(() => {
+        if (!cancelled) setCommunityLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const communityAlerts = useMemo(() => buildCommunityAlerts(DIGITAL_TWIN_AREAS, communityFarmers), [communityFarmers])
 
   const summaries = useMemo<AreaSummary[]>(
     () =>
@@ -136,8 +158,10 @@ export function AreaSelect({ onPick }: AreaSelectProps) {
             </div>
           </header>
 
-          <DistrictMap areas={DIGITAL_TWIN_AREAS} onPick={onPick} visibleAreaIds={visibleIds} />
+          <LiveMap areas={DIGITAL_TWIN_AREAS} onPick={onPick} visibleAreaIds={visibleIds} communityFarmers={communityFarmers} />
         </div>
+
+        <CommunityAlerts alerts={communityAlerts} loading={communityLoading} />
 
         <div className="dt-area-grid">
           {visible.map(({ area, summary }) => {

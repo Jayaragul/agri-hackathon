@@ -58,6 +58,31 @@ export class HarnessTelemetry {
   }
 
   /**
+   * Prepend records recovered from elsewhere (the backend copy — see
+   * `services/ai/runtime/telemetryPersistence.ts`), renumbering their `sequence` so they slot in
+   * ahead of whatever this process has already recorded live. Intended to run exactly once, right
+   * after construction, before any real call has landed — this class stays deliberately
+   * dependency-free (see the module doc comment), so it has no idea where `records` came from or
+   * how to fetch them; that I/O lives in the caller.
+   */
+  hydrate(records: AiCallRecord[]): void {
+    if (records.length === 0) return;
+    try {
+      const hydrated = records.map((r) => {
+        this.sequence += 1;
+        return { ...r, sequence: this.sequence };
+      });
+      this.records = [...hydrated, ...this.records];
+      while (this.records.length > this.limit) {
+        this.records.shift();
+      }
+    } catch {
+      return;
+    }
+    this.notify();
+  }
+
+  /**
    * Snapshot of retained records, oldest first.
    *
    * Returns a fresh array each call — safe for callers to sort/reverse, but NOT referentially

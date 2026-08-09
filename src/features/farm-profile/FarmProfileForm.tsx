@@ -5,6 +5,9 @@ import { getSessionStorage } from '../../services/storage'
 import type { FarmProfile } from '../../domain/models/models'
 import { ArrowRight, FileText, History, Loader2, Upload } from 'lucide-react'
 import { getSoilReportExtractor } from '../../services/ai'
+import { fileToInlineImage } from '../../services/ai/providers/GeminiSoilReportExtractor'
+import { getSessionId } from '../../services/session/sessionId'
+import { persistSoilReport } from '../../services/soilReport/soilReportClient'
 
 const FarmProfileForm: React.FC = () => {
   const { profile, labReport, setLabReport, setProfile, loadDemoProfile } = useFarmStore()
@@ -61,6 +64,24 @@ const FarmProfileForm: React.FC = () => {
     }))
     setReportStatus('success')
     setReportMessage(outcome.data.warnings.length > 0 ? outcome.data.warnings.join(' ') : 'Soil values imported. Complete the remaining farm details below.')
+
+    // Best-effort durable copy (Cloud Storage for the file, Firestore for the reading) — mirrors
+    // Audio Mode's `uploadLabReport` (`useVoiceConversation.ts`), which already did this. This
+    // upload path previously only reached `localStorage` via `setLabReport` above; the raw PDF/
+    // photo itself was never actually captured anywhere durable. Fire-and-forget: the farmer's
+    // reading is already applied locally, so this can never block or fail the visible upload.
+    void fileToInlineImage(file)
+      .then((image) =>
+        persistSoilReport({
+          sessionId: getSessionId(),
+          fileName: file.name || 'lab-report',
+          image,
+          extraction: outcome.data,
+        })
+      )
+      .catch(() => {
+        // Advisory only — see the comment above.
+      })
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

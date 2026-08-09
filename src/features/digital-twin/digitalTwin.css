@@ -198,6 +198,74 @@
 
 .dt-no-results { text-align: center; padding: 48px 20px; color: var(--muted-foreground); }
 
+/* --- Community Pest Watch --- */
+.dt-community-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-sm);
+}
+.dt-community-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.dt-community-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+.dt-community-badge {
+  font-size: 10.5px;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+}
+.dt-community-empty {
+  font-size: 12.5px;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+.dt-community-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dt-community-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.dt-community-item-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+}
+.dt-severity-low { background: var(--muted); color: var(--muted-foreground); }
+.dt-severity-low .dt-community-item-badge { background: var(--border); color: var(--muted-foreground); }
+.dt-severity-medium { background: var(--color-amber-50); color: var(--color-amber-700); }
+.dt-severity-medium .dt-community-item-badge { background: var(--color-amber-600); color: #fff; }
+.dt-severity-high { background: var(--color-red-50); color: var(--color-red-700); }
+.dt-severity-high .dt-community-item-badge { background: var(--color-red-600); color: #fff; }
+.dt-community-item-text { color: inherit; }
+
 /* --- District map --- */
 .dmap-panel {
   flex: 0 0 380px;

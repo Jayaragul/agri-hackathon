@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import gsap from 'gsap'
-import { Loader2, Mic, Pencil, Sprout, Video, Volume2 } from 'lucide-react'
+import { CheckCircle2, FileWarning, Loader2, Mic, Pencil, Sprout, Upload, Video, Volume2 } from 'lucide-react'
 import { useOnboarding } from './useOnboarding'
 
 /**
@@ -33,7 +33,13 @@ const OnboardingGate: React.FC<OnboardingGateProps> = ({ onModeChosen }) => {
     stopRecording,
     confirmName,
     retryName,
+    uploadStatus,
+    uploadMessage,
+    uploadReport,
+    skipUpload,
+    continueAfterUpload,
   } = useOnboarding()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -130,6 +136,85 @@ const OnboardingGate: React.FC<OnboardingGateProps> = ({ onModeChosen }) => {
                 That's right
               </button>
             </div>
+          </>
+        )}
+
+        {step === 'upload-report' && (
+          <>
+            <p style={{ color: 'var(--muted-foreground)', marginBottom: '8px', fontSize: '15px' }}>
+              Now, let's look at your soil.
+            </p>
+            <p style={{ color: 'var(--muted-foreground)', marginBottom: '20px', fontSize: '13px' }}>
+              Upload a photo or PDF of your soil test report — Thulir reads the numbers automatically so
+              everything after this is already grounded in your real farm.
+            </p>
+
+            {uploadStatus === 'success' ? (
+              <>
+                <div className="alert alert-success" style={{ textAlign: 'left', marginBottom: '20px' }}>
+                  <CheckCircle2 size={20} style={{ flexShrink: 0, color: 'var(--color-green-700, #1e7e34)' }} />
+                  <div className="alert-desc">{uploadMessage}</div>
+                </div>
+                <button type="button" className="btn btn-primary" style={{ width: '100%' }} onClick={continueAfterUpload}>
+                  Continue <Sprout size={16} />
+                </button>
+              </>
+            ) : (
+              <>
+                {uploadStatus === 'error' && (
+                  <div className="alert alert-danger" style={{ textAlign: 'left', marginBottom: '16px' }}>
+                    <FileWarning size={20} style={{ flexShrink: 0, color: 'var(--color-red-600)' }} />
+                    <div className="alert-desc">{uploadMessage}</div>
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,application/pdf"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (file) uploadReport(file)
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: '100%', marginBottom: '14px' }}
+                  disabled={uploadStatus === 'uploading'}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploadStatus === 'uploading' ? (
+                    <>
+                      <Loader2 size={18} className="spin" /> Reading your report…
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={18} /> Upload Soil Report
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={skipUpload}
+                  disabled={uploadStatus === 'uploading'}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--muted-foreground)',
+                    fontSize: '13px',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    padding: '4px',
+                  }}
+                >
+                  Skip for now — I'll enter values by hand
+                </button>
+              </>
+            )}
           </>
         )}
 
