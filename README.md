@@ -8,6 +8,24 @@ Gemini-powered agents that explain, perceive, and converse, but never decide.
 
 > Built for the **"Solving world hunger using AI"** track — a Google Developer Groups hackathon.
 
+## Contents
+
+- [The problem](#the-problem)
+- [The solution](#the-solution)
+- [Key features](#key-features)
+- [Architecture & the AI boundary](#architecture--the-ai-boundary)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Getting started](#getting-started)
+- [Environment variables](#environment-variables)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Storage architecture](#storage-architecture)
+- [FarmConnect marketplace integration](#farmconnect-marketplace-integration)
+- [Known gaps](#known-gaps)
+- [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
+
 ## The problem
 
 Smallholder farmers make the highest-stakes decisions in agriculture — what crop to plant, how
