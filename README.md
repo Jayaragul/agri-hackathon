@@ -139,6 +139,23 @@ npm --prefix server test       # server test suite
 Both suites are enforced clean before anything merges — deterministic engines, storage backends,
 and AI-harness fallback behavior all have direct unit tests, not just end-to-end smoke checks.
 
+## Deployment
+
+Ships as a single container — the root `Dockerfile` builds the Vite frontend and the Express
+backend together, so one Cloud Run service serves both:
+
+```bash
+gcloud run deploy krishi-mitra \
+  --source . \
+  --region asia-south1 \
+  --allow-unauthenticated \
+  --env-vars-file deploy-env.yaml \
+  --build-env-vars VITE_AI_TRANSPORT=server
+```
+
+Full runbook — API enablement, Firestore/bucket setup, IAM grants, rollback — is in
+[`deploy/DEPLOY.md`](deploy/DEPLOY.md).
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
