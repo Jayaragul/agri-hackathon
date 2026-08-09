@@ -184,6 +184,17 @@ server of its own — Krishi Mitra's backend is the shared seam between the two:
 Demand analysis is purely arithmetic (request count, quantity, median price) — no model call, no
 AI-originated number ever reaches a farmer's pricing decision.
 
+## Known gaps
+
+Stated plainly rather than left for someone else to discover:
+
+- The soil-report photo/PDF upload only has one entry point today (Audio Mode's "Lab report"
+  button) — the pre-sowing wizard has no dedicated upload step of its own yet.
+- FarmConnect's own "login" is a phone-number lookup with no password — fine for demo data,
+  not a real auth system.
+- Marketplace/soil-report data in Firestore is demand-signal data, not a transactional system of
+  record — treat it accordingly.
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
