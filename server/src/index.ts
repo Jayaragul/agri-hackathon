@@ -23,6 +23,8 @@ import { createVoiceRoutes } from "./routes/voiceRoutes";
 import { createWeatherRoutes } from "./routes/weatherRoutes";
 import { createMarketplaceRoutes } from "./routes/marketplaceRoutes";
 import { createSoilReportRoutes } from "./routes/soilReportRoutes";
+import { createCommunityRoutes } from "./routes/communityRoutes";
+import { createAgentTraceRoutes } from "./routes/agentTraceRoutes";
 import { getMemoryBackend } from "./services/memoryService";
 import { resolveGeminiApiKey, resolveSarvamApiKey, resolveWeatherApiKey } from "./services/env";
 
@@ -58,6 +60,8 @@ function main(): void {
   app.use("/api", createWeatherRoutes());
   app.use("/api", createMarketplaceRoutes(documents, marketplaceArchive));
   app.use("/api", createSoilReportRoutes(files, documents));
+  app.use("/api", createCommunityRoutes(marketplaceArchive));
+  app.use("/api", createAgentTraceRoutes(documents));
   getMemoryBackend(); // resolved eagerly so its startup log appears alongside storage/Gemini
 
   console.log(`Gemini proxy: ${resolveGeminiApiKey() ? "configured" : "no GEMINI_API_KEY set — /api/ai/generate will 503"}`);

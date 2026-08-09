@@ -23,6 +23,7 @@ import { isAiConfigured, loadHarnessConfig } from "./runtime/harnessConfig";
 import { selectTransport } from "./transport/selectTransport";
 import { ResponseCache } from "./runtime/ResponseCache";
 import { HarnessTelemetry } from "./runtime/HarnessTelemetry";
+import { wireTelemetryPersistence } from "./runtime/telemetryPersistence";
 import { AiHarness } from "./runtime/AiHarness";
 import { GeminiExplanationProvider } from "./providers/GeminiExplanationProvider";
 import { GeminiSoilReportExtractor } from "./providers/GeminiSoilReportExtractor";
@@ -78,9 +79,12 @@ function getCache(): ResponseCache {
   return cachedCache;
 }
 
-/** The shared telemetry log powering the AI trace panel. */
+/** The shared telemetry log powering the AI trace panel. Backend hydration/sync is wired exactly once, at first construction — see `telemetryPersistence.ts`. */
 export function getAiTelemetry(): HarnessTelemetry {
-  if (cachedTelemetry === null) cachedTelemetry = new HarnessTelemetry();
+  if (cachedTelemetry === null) {
+    cachedTelemetry = new HarnessTelemetry();
+    void wireTelemetryPersistence(cachedTelemetry);
+  }
   return cachedTelemetry;
 }
 

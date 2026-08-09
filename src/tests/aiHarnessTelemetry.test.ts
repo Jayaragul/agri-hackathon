@@ -127,3 +127,70 @@ describe("AiHarness telemetry — request/response/tool-call/notes logging", () 
     expect(records[1].toolCalls).toEqual([]);
   });
 });
+
+describe("HarnessTelemetry.hydrate — recovering records from the backend copy", () => {
+  const fakeRecord = (sequence: number) => ({
+    taskId: "answer-farm-question" as const,
+    label: "Ask Advisor",
+    source: "gemini" as const,
+    latencyMs: 100,
+    degraded: false,
+    validationRepaired: false,
+    ok: true,
+    attempts: 1,
+    sequence,
+    notes: [],
+    response: { parsedData: { answer: "hi" } },
+    toolCalls: [],
+  });
+
+  it("prepends hydrated records ahead of anything recorded live, renumbering sequence", () => {
+    const telemetry = new HarnessTelemetry();
+    telemetry.hydrate([fakeRecord(1), fakeRecord(2)]);
+    const records = telemetry.getRecords();
+    expect(records.map((r) => r.sequence)).toEqual([1, 2]);
+  });
+
+  it("live records recorded after hydration continue the sequence forward", () => {
+    const telemetry = new HarnessTelemetry();
+    telemetry.hydrate([fakeRecord(1)]);
+    telemetry.record({
+      taskId: "answer-farm-question",
+      label: "Live call",
+      source: "gemini",
+      latencyMs: 50,
+      degraded: false,
+      validationRepaired: false,
+      ok: true,
+      attempts: 1,
+      notes: [],
+      response: { parsedData: {} },
+      toolCalls: [],
+    });
+    const records = telemetry.getRecords();
+    expect(records.map((r) => r.sequence)).toEqual([1, 2]);
+    expect(records[1].label).toBe("Live call");
+  });
+
+  it("does nothing for an empty hydration list", () => {
+    const telemetry = new HarnessTelemetry();
+    telemetry.hydrate([]);
+    expect(telemetry.getRecords()).toEqual([]);
+  });
+
+  it("notifies subscribers after hydrating", () => {
+    const telemetry = new HarnessTelemetry();
+    let notified = false;
+    telemetry.subscribe(() => {
+      notified = true;
+    });
+    telemetry.hydrate([fakeRecord(1)]);
+    expect(notified).toBe(true);
+  });
+
+  it("respects the ring-buffer limit when hydrating more than it can hold", () => {
+    const telemetry = new HarnessTelemetry(2);
+    telemetry.hydrate([fakeRecord(1), fakeRecord(2), fakeRecord(3)]);
+    expect(telemetry.getRecords()).toHaveLength(2);
+  });
+});
