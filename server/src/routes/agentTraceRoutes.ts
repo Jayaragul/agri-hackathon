@@ -8,6 +8,7 @@
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import type { DocumentBackend } from "../storage/documentStore";
+import type { FileBackend } from "../storage/fileStore";
 import { AgentTraceRecordSchema } from "../storage/agentTraceTypes";
 import { getAgentTraceStore } from "../services/agentTraceStore";
 
@@ -22,9 +23,9 @@ function describeError(err: unknown): string {
   return String(err);
 }
 
-export function createAgentTraceRoutes(documents: DocumentBackend): Router {
+export function createAgentTraceRoutes(documents: DocumentBackend, files?: FileBackend): Router {
   const router = Router();
-  const store = getAgentTraceStore(documents);
+  const store = getAgentTraceStore(documents, files);
 
   router.post("/agent-traces", async (req: Request, res: Response) => {
     const parsed = RecordTraceRequestSchema.safeParse(req.body);

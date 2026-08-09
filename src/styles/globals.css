@@ -258,29 +258,6 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   margin: 0 auto 20px;
 }
 
-/* Audio Mode's dark-header variant — `.app-container-immersive` zeroes the parent's side
-   padding, so this restores an inset (safe-area-aware, matching `.voice-shell`'s own) and swaps
-   the light theme's white bar + dark text for the SAME near-black tone `.voice-shell` uses, so
-   there is no visible seam between the header and the voice screen beneath it. */
-.app-header-dark {
-  background: #0a0a0c;
-  padding-left: max(20px, env(safe-area-inset-left));
-  padding-right: max(20px, env(safe-area-inset-right));
-  padding-top: max(16px, env(safe-area-inset-top));
-  border-bottom: 1px solid rgba(242, 242, 243, 0.08);
-}
-.app-header-dark h1 {
-  color: #F2F2F3;
-}
-
-.btn-secondary-dark {
-  background: rgba(242, 242, 243, 0.08) !important;
-  color: #F2F2F3 !important;
-}
-.btn-secondary-dark:hover {
-  background: rgba(242, 242, 243, 0.16) !important;
-}
-
 /* Stepper */
 .progress-stepper {
   display: flex;
@@ -830,11 +807,12 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 }
 
 /* ---------------------------------------------------------------------------
-   Voice UI (Audio Mode) — a dedicated dark, glassmorphic surface. Deliberately
-   NOT part of the light Google-palette theme used everywhere else: a full-bleed
-   voice assistant screen reads as calmer and more "listening" on near-black,
-   and scoping the dark surface to this one screen (via .voice-shell) keeps the
-   rest of the app's established theme untouched.
+   Voice UI (Audio Mode) — now the SAME light Google-palette surface as the
+   rest of the app (`--background` white), instead of a one-off dark screen.
+   Keeps the app feeling like one product as a farmer moves between the
+   wizard, the calendar, and Audio Mode, rather than switching contexts every
+   time this screen opens. The four-color brand glow stays, just re-tuned to
+   sit quietly on white instead of black.
    --------------------------------------------------------------------------- */
 .voice-shell {
   position: relative;
@@ -843,8 +821,16 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: radial-gradient(circle at 50% 20%, #1F1F1F 0%, #000000 100%);
-  color: #FFFFFF;
+  /* Soft white base, the same one every other screen uses, framed by a quiet four-color glow in
+     each corner — the SAME Google Blue/Red/Yellow/Green identity the waveform/mic already use.
+     Low opacity, wide falloff: an ambient tint, never competing with actual content contrast. */
+  background:
+    radial-gradient(circle at 10% 12%, rgba(66, 133, 244, 0.10), transparent 32%),
+    radial-gradient(circle at 90% 10%, rgba(234, 67, 53, 0.07), transparent 30%),
+    radial-gradient(circle at 88% 90%, rgba(251, 188, 5, 0.08), transparent 30%),
+    radial-gradient(circle at 12% 88%, rgba(52, 168, 83, 0.09), transparent 32%),
+    #FFFFFF;
+  color: var(--foreground);
   padding: 24px;
   padding-top: max(24px, env(safe-area-inset-top));
   padding-bottom: max(24px, env(safe-area-inset-bottom));
@@ -863,20 +849,21 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   display: flex;
   align-items: center;
   gap: 6px;
-  border: none;
-  background: rgba(242, 242, 243, 0.08);
-  color: rgba(242, 242, 243, 0.55);
+  border: 1px solid rgba(251, 188, 5, 0.4);
+  background: rgba(251, 188, 5, 0.12);
+  color: #8A6100;
   border-radius: 20px;
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .voice-lab-report-btn:hover:not(:disabled) {
-  background: rgba(242, 242, 243, 0.16);
-  color: #F2F2F3;
+  background: rgba(251, 188, 5, 0.2);
+  border-color: rgba(251, 188, 5, 0.6);
+  color: #6B4B00;
 }
 
 .voice-lab-report-btn:disabled {
@@ -893,7 +880,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 .voice-mode-tab {
   border: none;
   background: transparent;
-  color: rgba(242, 242, 243, 0.4);
+  color: var(--muted-foreground);
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -906,38 +893,49 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   transition: color 0.2s ease, border-color 0.2s ease;
 }
 
-.voice-mode-tab.active {
-  color: #F2F2F3;
-  border-bottom-color: rgba(242, 242, 243, 0.5);
+/* Active tab tinted per mode — Blue for Audio, Green for Video — the same pairing the
+   onboarding mode-choice cards already use, so the color language carries through from first
+   launch into this toggle. */
+.voice-mode-tab-audio.active {
+  color: #4285F4;
+  border-bottom-color: #4285F4;
+}
+.voice-mode-tab-video.active {
+  color: #34A853;
+  border-bottom-color: #34A853;
 }
 
 .voice-greeting {
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: rgba(242, 242, 243, 0.4);
+  color: var(--muted-foreground);
   margin: 0 0 20px;
   text-transform: uppercase;
 }
 
 /* Compose bubble, pinned near the top rather than a bottom bar — type-to-ask is a first-class,
-   always-visible affordance here, not a secondary fallback tucked below the fold. */
+   always-visible affordance here, not a secondary fallback tucked below the fold. Elevated with a
+   soft shadow (rather than relying on a dark backdrop for depth) so it still reads as a distinct
+   surface against the now-white shell. */
 .voice-top-bubble {
   width: 100%;
   max-width: 460px;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(242, 242, 243, 0.06);
-  border: 1px solid rgba(242, 242, 243, 0.09);
+  background: #FFFFFF;
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 6px 6px 6px 20px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .voice-top-bubble:focus-within {
-  border-color: rgba(242, 242, 243, 0.22);
-  background: rgba(242, 242, 243, 0.09);
+  border-color: rgba(66, 133, 244, 0.5);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
 }
 
 .voice-top-bubble input {
@@ -946,13 +944,13 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   background: transparent;
   border: none;
   outline: none;
-  color: #F2F2F3;
+  color: var(--foreground);
   font-size: 14px;
   font-weight: 400;
 }
 
 .voice-top-bubble input::placeholder {
-  color: rgba(242, 242, 243, 0.35);
+  color: var(--muted-foreground);
 }
 
 .voice-send-circle {
@@ -976,11 +974,21 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 .voice-send-circle:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* Purely decorative divider, matching the reference layout's top/bottom sheet handles. */
+/* A tiny four-color brand stripe standing in for what was a flat gray divider — the same
+   Blue/Red/Yellow/Green lockup used elsewhere in the app (e.g. the onboarding card), just muted
+   via opacity so it still reads as a quiet divider rather than a loud accent. */
 .voice-handle-bar {
   width: 36px;
   height: 4px;
   border-radius: 999px;
-  background: rgba(242, 242, 243, 0.14);
+  background: linear-gradient(
+    to right,
+    #4285F4 0%, #4285F4 25%,
+    #EA4335 25%, #EA4335 50%,
+    #FBBC05 50%, #FBBC05 75%,
+    #34A853 75%, #34A853 100%
+  );
+  opacity: 0.55;
   margin: 18px auto;
 }
 
@@ -1024,9 +1032,10 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 
 .voice-msg-assistant {
   align-self: flex-start;
-  background: rgba(242, 242, 243, 0.07);
-  border: 1px solid rgba(242, 242, 243, 0.08);
-  color: rgba(242, 242, 243, 0.92);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-left: 3px solid #34A853;
+  color: var(--foreground);
   border-bottom-left-radius: 4px;
 }
 
@@ -1046,8 +1055,8 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   font-weight: 500;
   padding: 3px 9px;
   border-radius: 999px;
-  background: rgba(66, 133, 244, 0.16);
-  color: #E5E5E5;
+  background: rgba(66, 133, 244, 0.12);
+  color: #1A56C4;
   white-space: nowrap;
 }
 
@@ -1068,9 +1077,17 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: rgba(242, 242, 243, 0.45);
+  color: var(--muted-foreground);
   margin: 0;
+  transition: color 0.3s ease;
 }
+
+/* The phase LABEL now carries the same color the waveform/mic ring already does for that
+   phase — "Recording" reads in red, "Thinking" in yellow, "Speaking" in green — so the state
+   language is legible in text, not just inferred from an abstract animated shape. */
+.voice-hero.recording .voice-phase-label { color: #EA4335; }
+.voice-hero.thinking .voice-phase-label { color: #FBBC05; }
+.voice-hero.speaking .voice-phase-label { color: #34A853; }
 
 /* The waveform — the state visualiser, separate from the mic button beneath it (rather than one
    combined orb). Idle is a quiet, static gray bar row; an active phase both colors the bars (via
@@ -1090,7 +1107,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   width: 7px;
   height: 22px;
   border-radius: 999px;
-  background: rgba(242, 242, 243, 0.32);
+  background: rgba(31, 31, 31, 0.18);
   transition: background 0.4s ease;
 }
 
@@ -1141,10 +1158,9 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   50% { transform: scaleY(1); }
 }
 
-/* The mic button — separate from the waveform above it now, a smaller, solid, dark circle
-   rather than the previous single gradient orb. Still shares the waveform's state colors via a
-   subtle ring rather than filling the whole button, keeping the reference's mostly-monochrome
-   button look while still signalling state at a glance. */
+/* The mic button — a solid dark circle, deliberately still dark even on the now-light shell (the
+   one anchor element that should stay a strong focal point, like a floating action button) — with
+   a real elevation shadow standing in for the depth a dark backdrop used to provide for free. */
 .voice-mic-standalone {
   --orb-1: #4285F4;
   --orb-2: #34A853;
@@ -1155,14 +1171,14 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   min-width: var(--touch-target);
   min-height: var(--touch-target);
   border-radius: 50%;
-  border: 1px solid rgba(242, 242, 243, 0.14);
+  border: 1px solid rgba(31, 31, 31, 0.08);
   cursor: pointer;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(0, 0, 0, 0.25)), #1F1F1F;
-  box-shadow: 0 0 0 0 rgba(66, 133, 244, 0);
+  box-shadow: 0 8px 20px rgba(31, 31, 31, 0.18), 0 0 0 0 rgba(66, 133, 244, 0);
   animation: mic-idle-pulse 2.6s ease-in-out infinite;
   transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
 }
@@ -1171,26 +1187,26 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 .voice-mic-standalone:disabled { cursor: not-allowed; opacity: 0.5; animation: none; }
 
 @keyframes mic-idle-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.25); }
-  50% { box-shadow: 0 0 0 14px rgba(66, 133, 244, 0); }
+  0%, 100% { box-shadow: 0 8px 20px rgba(31, 31, 31, 0.18), 0 0 0 0 rgba(66, 133, 244, 0.25); }
+  50% { box-shadow: 0 8px 20px rgba(31, 31, 31, 0.18), 0 0 0 14px rgba(66, 133, 244, 0); }
 }
 
 .voice-mic-standalone.recording {
   --orb-1: #EA4335;
   --orb-2: #FBBC05;
-  box-shadow: 0 0 0 4px rgba(234, 67, 53, 0.3), 0 0 24px 4px rgba(234, 67, 53, 0.25);
+  box-shadow: 0 8px 20px rgba(31, 31, 31, 0.18), 0 0 0 4px rgba(234, 67, 53, 0.3), 0 0 24px 4px rgba(234, 67, 53, 0.25);
   animation: none;
 }
 .voice-mic-standalone.thinking {
   --orb-1: #4285F4;
   --orb-2: #FBBC05;
-  box-shadow: 0 0 0 4px rgba(251, 188, 5, 0.3), 0 0 24px 4px rgba(251, 188, 5, 0.25);
+  box-shadow: 0 8px 20px rgba(31, 31, 31, 0.18), 0 0 0 4px rgba(251, 188, 5, 0.3), 0 0 24px 4px rgba(251, 188, 5, 0.25);
   animation: none;
 }
 .voice-mic-standalone.speaking {
   --orb-1: #34A853;
   --orb-2: #4285F4;
-  box-shadow: 0 0 0 4px rgba(52, 168, 83, 0.3), 0 0 24px 4px rgba(52, 168, 83, 0.25);
+  box-shadow: 0 8px 20px rgba(31, 31, 31, 0.18), 0 0 0 4px rgba(52, 168, 83, 0.3), 0 0 24px 4px rgba(52, 168, 83, 0.25);
   animation: none;
 }
 

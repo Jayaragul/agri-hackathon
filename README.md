@@ -1,236 +1,160 @@
 # 🌾 Thulir
 
-**Smart farming, rooted locally.**
+**தளிர் — a fresh, tender sprout.**
 
-**AI-native decision support for smallholder farmers in Tamil Nadu, India.**
+**Thulir is a farming companion for the smallholder farmer who has never had one — someone
+deciding what to plant, how to fix their soil, and what to do next, usually alone.**
 
-Thulir helps a beginner farmer decide *what to grow, how to fix their soil, what it will
-cost, what could go wrong, and what to do next* — combining a deterministic agronomy engine with
-Gemini-powered agents that explain, perceive, and converse, but never decide.
+> Built for the **"Solving world hunger using AI"** track — a Google Developer Groups
+> hackathon — by team **code-sastra**.
 
-> Built for the **"Solving world hunger using AI"** track — a Google Developer Groups hackathon.
+---
 
 ## Contents
 
-- [The problem](#the-problem)
-- [The solution](#the-solution)
-- [Key features](#key-features)
-- [Architecture & the AI boundary](#architecture--the-ai-boundary)
-- [Tech stack](#tech-stack)
-- [Project structure](#project-structure)
-- [Getting started](#getting-started)
-- [Environment variables](#environment-variables)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Storage architecture](#storage-architecture)
-- [FarmConnect marketplace integration](#farmconnect-marketplace-integration)
-- [Known gaps](#known-gaps)
-- [Contributing](#contributing)
-- [Acknowledgments](#acknowledgments)
+- [Why Thulir exists](#why-thulir-exists)
+- [Who Thulir is for](#who-thulir-is-for)
+- [What Thulir actually does — in use](#what-thulir-actually-does--in-use)
+  - [1. "What should I even grow?"](#1-what-should-i-even-grow)
+  - [2. "I have a soil test report. Now what?"](#2-i-have-a-soil-test-report-now-what)
+  - [3. "What do I do today, and what's coming?"](#3-what-do-i-do-today-and-whats-coming)
+  - [4. "Will this actually make me money?"](#4-will-this-actually-make-me-money)
+  - [5. "Something's wrong with my crop — right now"](#5-somethings-wrong-with-my-crop--right-now)
+  - [6. "I'd rather just talk"](#6-id-rather-just-talk)
+  - [7. "Who will even buy what I grow?"](#7-who-will-even-buy-what-i-grow)
+  - [8. "I don't want to repeat myself every time"](#8-i-dont-want-to-repeat-myself-every-time)
+  - [9. "Show me how my field is actually doing"](#9-show-me-how-my-field-is-actually-doing)
+- [What makes Thulir's advice trustworthy](#what-makes-thulirs-advice-trustworthy)
+- [Honest about what's not finished yet](#honest-about-whats-not-finished-yet)
+- [Team](#team)
 
-## The problem
+---
+
+## Why Thulir exists
 
 Smallholder farmers make the highest-stakes decisions in agriculture — what crop to plant, how
-much fertilizer to buy, when to sow — with the least reliable information, often relying on
-guesswork, a neighbor's advice, or a fertilizer dealer with an incentive to oversell. A wrong
-crop choice or a mistimed input purchase can mean a season of debt.
+much fertilizer to buy, when to sow — with the least reliable information. Too often that
+decision comes from guesswork, a neighbor's advice, or a fertilizer dealer who profits from
+overselling. A wrong crop choice or a mistimed input purchase doesn't mean a bad quarter — it
+means a season of debt for a family with no cushion to absorb it.
 
-Thulir is designed specifically for a **first-time, possibly non-literate user** on a
-budget Android phone: audio-first, plain language, and honest about what it doesn't know.
+Thulir exists to put a patient, honest, always-available advisor in that farmer's pocket — one
+that never guesses when it doesn't know, never sells anything, and is built to work for someone
+who has never used an app like this before.
 
-## The solution
+## Who Thulir is for
 
-A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
-cultivation calendar turns that into a day-by-day plan, and a set of AI agents explain, extract,
-and converse around that plan — never replacing it. See
-[Architecture & the AI boundary](#architecture--the-ai-boundary) for exactly how that split is
-enforced in code, not just in a slide.
+Thulir is designed around one specific, deliberately hard user: a **first-time, possibly
+non-literate farmer on a budget Android phone.** Not a power user, not an agronomy student —
+someone who may never have filled out a form on a phone before, who may not read comfortably in
+any language, and whose data connection can drop mid-conversation.
 
-## Key features
+That's why the app opens straight into **voice**, not a form. That's why every answer degrades
+gracefully instead of failing when there's no internet. That's why nothing the app says is ever
+padded with jargon it can't back up.
 
-- 🎙️ **Audio Mode** — the app's default landing screen. A farmer speaks naturally in Tamil or
-  English; no wizard, no forms, no reading required to get a first useful answer.
-- 🌱 **Crop recommendation wizard** — scores every crop in the dataset against the farmer's soil
-  (pH, N/P/K), land size, and region, with a transparent, explainable score breakdown.
-- 🧪 **Soil report reading** — photograph or upload a PDF of a Soil Health Card; Gemini extracts
-  the numbers, the farmer's own entry is never silently overwritten.
-- 📅 **Cultivation calendar** — a deterministic, day-by-day plan from sowing to harvest, with
-  proactive pest-risk and weather alerts.
-- 💰 **Financial planning** — cost, revenue, and break-even scenarios for the recommended crop.
-- 🩺 **Crop Doctor** — a live voice-and-video assistant that matches a photographed pest/disease
-  against a fixed, verified reference list — never an open-ended, unverifiable diagnosis.
-- 🛒 **FarmConnect marketplace integration** — real consumer demand data (not a guess) feeds
-  "what's the demand for my crop" answers, and lets a farmer list produce for sale.
-- 🧠 **Long-term memory** — remembers durable facts about a farmer across conversations, via
-  mem0, without ever replaying full chat history.
+## What Thulir actually does — in use
 
-## Architecture & the AI boundary
+Rather than a feature list, here's what actually happens when a farmer opens Thulir — the real
+situations it's built to handle.
 
-> **The deterministic engine (`src/engine/**`) DECIDES. Every AI agent only EXPLAINS or
-> PERCEIVES.**
+### 1. "What should I even grow?"
 
-No agent output may ever change a suitability score, a crop ranking, a financial figure, a
-safety threshold, or a chemical/pesticide dose. Concretely:
+A farmer opens the app for the first time and, instead of a signup form, is asked to simply say
+their name out loud. From there they can walk through a short pre-sowing wizard — their land
+size, their soil's pH and nutrient levels (if known), their region — and Thulir scores **every
+crop that could realistically grow there**, ranked with a plain-language reason for each score:
+not just "grow cotton" but "cotton scores highest because your soil's pH and your land size both
+suit it well, and the local market price for it has held steady." A farmer who's never made this
+decision with real numbers before now has one.
 
-- Live market prices fetched via Gemini search grounding are **informational only** and never
-  re-enter the financial math.
-- Chemical/pesticide/fertilizer dosing comes **only** from the verified dataset, never the model.
-- Pest photo identification is **constrained classification** against a crop's known pest list,
-  not open-ended diagnosis.
-- A soil-report extraction returns `null` rather than guess, and every extracted value stays
-  farmer-editable.
+### 2. "I have a soil test report. Now what?"
 
-Every agent is discoverable at runtime through an in-process **A2A-style orchestrator**
-(`src/services/ai/a2a/`), modelled on Google's Agent2Agent protocol shape — one registry, one
-call-log, instead of each screen reaching into a different agent directly. Full agent-by-agent
-detail lives in [`catalog.md`](catalog.md).
+Most farmers who *have* had their soil tested have a printed report they don't fully understand,
+sitting folded in a drawer. Thulir lets them photograph it or upload the PDF, reads off the pH,
+nitrogen, phosphorus, and potassium values, and drops those numbers straight into the crop
+recommendation — no manual data entry, no guessing at what the numbers mean. If a photo is too
+blurry or the document isn't recognizable, Thulir says so honestly rather than inventing numbers
+that could send a farmer's fertilizer budget in the wrong direction.
 
-## Tech stack
+### 3. "What do I do today, and what's coming?"
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, TypeScript, Vite, Zustand, Vitest |
-| Backend | Node.js, Express, TypeScript |
-| AI | Gemini (`@google/genai`), Antigravity ADK transport, server-side proxy transport |
-| Voice | Sarvam AI (speech-to-text + text-to-speech, Tamil/English) |
-| Long-term memory | mem0 |
-| Structured storage | Google Cloud Firestore |
-| File/object storage | Google Cloud Storage |
-| Weather | Google Maps Platform Weather API |
-| Hosting | Google Cloud Run (single container, Cloud Build) |
+Once a crop is chosen, Thulir turns it into a real day-by-day calendar — sowing, soil
+preparation, germination, flowering, harvest — each day telling the farmer what to actually do
+and warning them ahead of time about pest-risk windows opening or bad weather rolling in ("heavy
+rain expected Thursday — hold off on spraying"). This isn't a static leaflet; it's the same
+calendar a farmer can ask questions about in their own words, like "why do I need to weed this
+week?" and get an answer grounded in their own plan, not a generic tip.
 
-## Project structure
+### 4. "Will this actually make me money?"
 
-```
-├── src/                        Frontend (React + TypeScript)
-│   ├── engine/                 Deterministic scoring/calendar/proactive-alert engines
-│   ├── services/ai/            Agents, tasks, transports, the A2A orchestrator
-│   ├── services/marketplace/   FarmConnect integration client
-│   ├── services/soilReport/    Soil-report upload/persistence client
-│   ├── features/               One folder per screen (voice-mode, crop-doctor, ...)
-│   ├── domain/models/          Shared TypeScript types
-│   └── data/sample/            Verified crop/pest/correction datasets
-├── server/                     Backend (Express + TypeScript)
-│   ├── src/routes/             /api/* endpoints
-│   ├── src/services/           Gemini/Sarvam/Weather proxies, marketplace demand logic
-│   └── src/storage/            GCS (bucketStore/fileStore) + Firestore (documentStore) backends
-├── marketplace/                FarmConnect — an independently-deployed vanilla-JS consumer app
-├── .claude/skills/              Storage-audit tooling (Python CLI + docs)
-├── deploy/DEPLOY.md            Cloud Run deployment runbook
-└── catalog.md                  Full agent & skill catalog
-```
+Before committing a season's savings to a crop, a farmer can see the real economics laid out —
+expected costs, expected revenue, and the break-even point — for the specific crop and land size
+they're considering. Not a rosy projection, a grounded one, so a bad bet can be caught before
+the money is spent rather than after.
 
-## Getting started
+### 5. "Something's wrong with my crop — right now"
 
-Requires Node.js 20+.
+A farmer sees spots on a leaf or holes eaten through it and doesn't know if it's serious. They
+open **Crop Doctor**, point their phone's camera at the plant, and talk to Thulir like they
+would a real extension officer — describing what they're seeing while Thulir watches through the
+camera in real time. Thulir matches what it sees against a verified list of known pests and
+diseases for that specific crop and tells the farmer, out loud, what it believes is happening and
+what to do about it — never an unverifiable guess, always grounded in a real, checked reference.
 
-```bash
-# Install frontend + backend dependencies
-npm install
-npm --prefix server install
+### 6. "I'd rather just talk"
 
-# Copy the env template (every variable is optional — the app runs fully offline with none set)
-cp .env.example .env
+Reading and typing are barriers for many of Thulir's actual users, so **Audio Mode** — the
+screen the app opens into by default — lets a farmer just talk, in Tamil or English, and get a
+spoken answer back. Ask "how much rain is coming this week" or "what should I do about aphids on
+my groundnut" and get a real, personalized answer read aloud, with a text option always available
+for anyone who'd rather type. No wizard, no forms, no reading required to get a first useful
+answer.
 
-# Run frontend + backend together (recommended — mirrors production's single-origin setup)
-npm run dev:full
-```
+### 7. "Who will even buy what I grow?"
 
-The app opens at `http://localhost:5173` (or the next free port). With no `.env` values set,
-every AI feature transparently falls back to a deterministic local answer — a missing key is the
-normal path, not an error.
+A farmer wondering whether it's worth growing tomatoes this season can ask Thulir what the
+demand actually looks like — and get a real number, because Thulir is connected to
+**FarmConnect**, a live marketplace where nearby consumers post what they're looking to buy. When
+the farmer is ready to sell, they can list their produce directly, and everyone who'd been asking
+for that crop gets notified. This turns "I hope someone wants this" into an actual, informed
+decision.
 
-## Environment variables
+### 8. "I don't want to repeat myself every time"
 
-Every variable is optional; see [`.env.example`](.env.example) for the full, heavily-commented
-reference. The ones you'll actually reach for:
+Thulir remembers the durable facts a farmer has shared across every conversation they've ever
+had with it — that they grow tomatoes on two acres near Coimbatore, that they already tried neem
+oil for aphids last season and it didn't fully work — so a new conversation doesn't start from
+zero. A farmer never has to re-explain their own farm.
 
-| Variable | Purpose |
-|---|---|
-| `GEMINI_API_KEY` | Server-side Gemini key (never sent to the browser) |
-| `VITE_AI_TRANSPORT=server` | Routes AI calls through this app's own backend — the production setting |
-| `SARVAM_API_KEY` | Powers Audio Mode's speech-to-text/text-to-speech |
-| `GOOGLE_WEATHER_API_KEY` | Proactive weather-based alerts |
-| `MEM0_API_KEY` | Long-term cross-conversation farmer memory |
-| `GCS_BUCKET_NAME` | Session data + uploaded soil-report files (Cloud Storage) |
-| `FIRESTORE_ENABLED=true` | Marketplace + soil-report metadata (Firestore) |
+### 9. "Show me how my field is actually doing"
 
-## Testing
+Beyond the pre-sowing decision, Thulir includes a **Digital Twin** view of a field — a living,
+season-long simulation of crop growth and field health a farmer (or an extension worker, or a
+judge evaluating the project) can watch play out over time, the same way a real field would
+develop under the conditions it's given.
 
-```bash
-npm run typecheck              # frontend
-npx vitest run                 # frontend test suite
-npm --prefix server run build  # server typecheck + build
-npm --prefix server test       # server test suite
-```
+## What makes Thulir's advice trustworthy
 
-Both suites are enforced clean before anything merges — deterministic engines, storage backends,
-and AI-harness fallback behavior all have direct unit tests, not just end-to-end smoke checks.
+The one rule Thulir never breaks: **a calculation decides, an AI only explains it.** Every crop
+ranking, every financial figure, every fertilizer dose, every safety threshold comes from a
+verified, checked source — never from a model's best guess. The AI's job is to read that result
+back in plain, personal language, to look at a photo and match it against a known list, or to
+have a natural conversation — never to invent a number a farmer might act on. If it doesn't know
+something, it says so, rather than making something up that sounds confident.
 
-## Deployment
-
-Ships as a single container — the root `Dockerfile` builds the Vite frontend and the Express
-backend together, so one Cloud Run service serves both:
-
-```bash
-gcloud run deploy thulir \
-  --source . \
-  --region asia-south1 \
-  --allow-unauthenticated \
-  --set-env-vars GCS_BUCKET_NAME="${BUCKET_NAME}",FIRESTORE_ENABLED=true,GEMINI_API_KEY="${GEMINI_API_KEY}",SARVAM_API_KEY="${SARVAM_API_KEY}",GOOGLE_WEATHER_API_KEY="${GOOGLE_WEATHER_API_KEY}" \
-  --build-env-vars VITE_AI_TRANSPORT=server
-```
-
-Full runbook — API enablement, Firestore/bucket setup, IAM grants, rollback — is in
-[`deploy/DEPLOY.md`](deploy/DEPLOY.md).
-
-## Storage architecture
-
-Three independently-optional backends, each chosen for what it's actually good at — never
-required for the app to run:
-
-- **GCS (JSON blobs)** — session profile + chat threads, one blob per session, no concurrent
-  writers to worry about.
-- **GCS (binary files)** — original uploaded soil-report photos/PDFs.
-- **Firestore** — marketplace orders/listings and soil-report metadata: anything written
-  concurrently by more than one caller gets its own document, so two Cloud Run instances syncing
-  at once can never clobber each other's write — the actual fix for a real race the earlier
-  single-JSON-blob design had.
-
-See `.claude/skills/krishi-mitra-storage/SKILL.md` for the exact layout and an audit CLI.
-
-## FarmConnect marketplace integration
-
-`marketplace/` is a separate, independently-deployed vanilla-JS consumer/farmer app with no
-server of its own — Thulir's backend is the shared seam between the two:
-
-- FarmConnect pushes every new consumer request in, so a farmer's "what's the demand for my
-  crop" question gets a real number, not nothing.
-- Thulir pushes a new "let's sell it" listing out, and FarmConnect notifies every consumer
-  who had an open request for that crop.
-
-Demand analysis is purely arithmetic (request count, quantity, median price) — no model call, no
-AI-originated number ever reaches a farmer's pricing decision.
-
-## Known gaps
+## Honest about what's not finished yet
 
 Stated plainly rather than left for someone else to discover:
 
-- The soil-report photo/PDF upload only has one entry point today (Audio Mode's "Lab report"
-  button) — the pre-sowing wizard has no dedicated upload step of its own yet.
-- FarmConnect's own "login" is a phone-number lookup with no password — fine for demo data,
-  not a real auth system.
-- Marketplace/soil-report data in Firestore is demand-signal data, not a transactional system of
-  record — treat it accordingly.
+- Uploading a soil report photo currently only has one entry point (the "Lab report" button in
+  Audio Mode) — the step-by-step planning wizard doesn't have its own upload option yet.
+- FarmConnect's "login" is just a phone-number lookup with no password — fine for a demo, not a
+  real account system yet.
+- Marketplace and soil-report data reflect real demand and real readings, but aren't yet treated
+  as a permanent system of record — think of them as strong signals, not final books.
 
-## Contributing
+## Team
 
-New agents follow a fixed pattern documented at the bottom of [`catalog.md`](catalog.md#how-a-new-agent-gets-added):
-write the task, wrap it in an agent class, register it with the A2A orchestrator, document it —
-and if the new skill could ever influence a score, ranking, or financial figure, stop: that
-decision belongs in `src/engine/`, not the AI layer.
-
-## Acknowledgments
-
-Built for a Google Developer Groups hackathon under the "Solving world hunger using AI" track,
-by team **code-sastra**.
+Built for a Google Developer Groups hackathon under the **"Solving world hunger using AI"**
+track, by team **code-sastra**.

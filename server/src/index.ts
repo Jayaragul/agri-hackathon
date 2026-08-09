@@ -61,7 +61,7 @@ function main(): void {
   app.use("/api", createMarketplaceRoutes(documents, marketplaceArchive));
   app.use("/api", createSoilReportRoutes(files, documents));
   app.use("/api", createCommunityRoutes(marketplaceArchive));
-  app.use("/api", createAgentTraceRoutes(documents));
+  app.use("/api", createAgentTraceRoutes(documents, files));
   getMemoryBackend(); // resolved eagerly so its startup log appears alongside storage/Gemini
 
   console.log(`Gemini proxy: ${resolveGeminiApiKey() ? "configured" : "no GEMINI_API_KEY set — /api/ai/generate will 503"}`);

@@ -1,10 +1,11 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { MemoryDocumentBackend } from "../storage/documentStore";
+import { MemoryFileBackend, type FileBackend } from "../storage/fileStore";
 import { getAgentTraceStore, resetAgentTraceStore } from "./agentTraceStore";
 
-function freshStore() {
+function freshStore(archive?: FileBackend) {
   resetAgentTraceStore();
-  return getAgentTraceStore(new MemoryDocumentBackend());
+  return getAgentTraceStore(new MemoryDocumentBackend(), archive);
 }
 
 const baseRecord = {
@@ -56,5 +57,46 @@ describe("AgentTraceStore", () => {
     await store.recordTrace({ ...baseRecord, sequence: 1 });
     const traces = await store.getRecentTraces("s1");
     expect(traces.map((t) => t.sequence)).toEqual([1, 2]);
+  });
+
+  describe("archive (GCS_BUCKET_NAME agent-traces/**)", () => {
+    it("archives a recorded trace under agent-traces/<sessionId>/<id>.json", async () => {
+      const archive = new MemoryFileBackend();
+      const writeSpy = vi.spyOn(archive, "writeFile");
+      const store = freshStore(archive);
+      await store.recordTrace(baseRecord);
+
+      expect(writeSpy).toHaveBeenCalledTimes(1);
+      const [path, data, contentType] = writeSpy.mock.calls[0];
+      expect(path).toMatch(/^agent-traces\/s1\/[^/]+\.json$/);
+      expect(contentType).toBe("application/json");
+      expect(JSON.parse(data.toString("utf8"))).toMatchObject({ sessionId: "s1", label: "Ask Advisor" });
+
+      expect(await archive.readFile(path)).not.toBeNull();
+    });
+
+    it("never archives a malformed record — it's dropped before any write is attempted", async () => {
+      const archive = new MemoryFileBackend();
+      const writeSpy = vi.spyOn(archive, "writeFile");
+      const store = freshStore(archive);
+      await store.recordTrace({ ...baseRecord, sessionId: "" } as never);
+      expect(writeSpy).not.toHaveBeenCalled();
+    });
+
+    it("an archive write failure never breaks recordTrace — best-effort, logged not thrown", async () => {
+      const archive: FileBackend = {
+        writeFile: vi.fn().mockRejectedValue(new Error("bucket unreachable")),
+        readFile: vi.fn().mockResolvedValue(null),
+      };
+      const store = freshStore(archive);
+      await expect(store.recordTrace(baseRecord)).resolves.toBeUndefined();
+      expect(await store.getRecentTraces("s1")).toHaveLength(1);
+    });
+
+    it("works exactly as before with no archive configured at all", async () => {
+      const store = freshStore(); // no archive arg
+      await expect(store.recordTrace(baseRecord)).resolves.toBeUndefined();
+      expect(await store.getRecentTraces("s1")).toHaveLength(1);
+    });
   });
 });
