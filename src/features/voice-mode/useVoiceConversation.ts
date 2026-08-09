@@ -47,6 +47,7 @@ export const PHASE_LABEL: Record<VoiceConversationPhase, string> = {
 };
 
 const SILENCE_EVENT = "voice-mode-silence-detected";
+const DEFAULT_VOICE_LANGUAGE = "ta-IN";
 
 export interface VoiceConversationState {
   phase: VoiceConversationPhase;
@@ -78,6 +79,7 @@ export function useVoiceConversation(): VoiceConversationState {
     setDeclaredSituation,
     setLabReport,
     setProfile,
+    setStage,
     logTimelineEvent,
   } = useFarmStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -122,7 +124,7 @@ export function useVoiceConversation(): VoiceConversationState {
           const greeting = declaredSituation
             ? `${name} நான் துளிர்.${headsUp} பேச பொத்தானை அழுத்தவும், அல்லது கீழே தட்டச்சு செய்யவும் — உங்கள் பண்ணையைப் பற்றி எதுவும் கேளுங்கள்.`
             : `${name} நான் துளிர்.${headsUp} சிறந்த பதில் தர, நீங்கள் என்ன பயிர் செய்கிறீர்கள், உங்கள் பண்ணை எங்கே உள்ளது என்று சொல்லுங்கள் — அல்லது எதுவும் கேளுங்கள்.`;
-          void speak(greeting);
+          void speak(greeting, DEFAULT_VOICE_LANGUAGE);
         }
       })
       .catch(() => {});
@@ -278,6 +280,12 @@ export function useVoiceConversation(): VoiceConversationState {
         if (Object.keys(extractedProfile).length > 0) {
           setProfile({ ...profile, ...extractedProfile });
         }
+      } else {
+        // A first-time farmer can upload a report from Audio Mode before entering a profile.
+        // Move them to the planner so the extracted values are already filled in and the only
+        // remaining inputs are the context the report cannot safely provide (region, soil type,
+        // acreage, and sowing month).
+        setStage("farm-profile");
       }
 
       // Best-effort durable copy (Cloud Storage for the file, Firestore for the reading) — see
@@ -340,7 +348,7 @@ export function useVoiceConversation(): VoiceConversationState {
     try {
       setPhase("transcribing");
       const { base64Data, mimeType } = await recorder.stop();
-      const transcript = await transcribeAudio(base64Data, mimeType);
+      const transcript = await transcribeAudio(base64Data, mimeType, DEFAULT_VOICE_LANGUAGE);
       await askQuestion(transcript);
     } catch (err) {
       setPhase("error");

@@ -3,11 +3,14 @@ import { useFarmStore } from '../../state/farmStore'
 import { FarmProfileSchema } from '../../domain/schemas/schemas'
 import { getSessionStorage } from '../../services/storage'
 import type { FarmProfile } from '../../domain/models/models'
-import { ArrowRight, History } from 'lucide-react'
+import { ArrowRight, FileText, History, Loader2, Upload } from 'lucide-react'
+import { getSoilReportExtractor } from '../../services/ai'
 
 const FarmProfileForm: React.FC = () => {
-  const { profile, setProfile, loadDemoProfile } = useFarmStore()
+  const { profile, labReport, setLabReport, setProfile, loadDemoProfile } = useFarmStore()
   const [savedProfile, setSavedProfile] = useState<FarmProfile | null>(null)
+  const [reportStatus, setReportStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
+  const [reportMessage, setReportMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (profile) return
@@ -24,10 +27,10 @@ const FarmProfileForm: React.FC = () => {
   }, [profile])
 
   const [formData, setFormData] = useState({
-    ph: profile?.ph?.toString() || '',
-    nitrogenKgPerAcre: profile?.nitrogenKgPerAcre?.toString() || '',
-    phosphorusKgPerAcre: profile?.phosphorusKgPerAcre?.toString() || '',
-    potassiumKgPerAcre: profile?.potassiumKgPerAcre?.toString() || '',
+    ph: profile?.ph?.toString() || labReport?.ph?.toString() || '',
+    nitrogenKgPerAcre: profile?.nitrogenKgPerAcre?.toString() || labReport?.nitrogenKgPerAcre?.toString() || '',
+    phosphorusKgPerAcre: profile?.phosphorusKgPerAcre?.toString() || labReport?.phosphorusKgPerAcre?.toString() || '',
+    potassiumKgPerAcre: profile?.potassiumKgPerAcre?.toString() || labReport?.potassiumKgPerAcre?.toString() || '',
     soilType: profile?.soilType || '',
     region: profile?.region || '',
     acres: profile?.acres?.toString() || '1',
@@ -35,6 +38,30 @@ const FarmProfileForm: React.FC = () => {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const handleReportChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setReportStatus('uploading')
+    setReportMessage(null)
+    const outcome = await getSoilReportExtractor().extractDetailed(file)
+    if (!outcome.data.documentRecognised) {
+      setReportStatus('error')
+      setReportMessage(outcome.data.warnings[0] || 'This file was not recognised as a soil report.')
+      return
+    }
+    setLabReport(outcome.data)
+    setFormData(prev => ({
+      ...prev,
+      ph: outcome.data.ph === null ? prev.ph : String(outcome.data.ph),
+      nitrogenKgPerAcre: outcome.data.nitrogenKgPerAcre === null ? prev.nitrogenKgPerAcre : String(outcome.data.nitrogenKgPerAcre),
+      phosphorusKgPerAcre: outcome.data.phosphorusKgPerAcre === null ? prev.phosphorusKgPerAcre : String(outcome.data.phosphorusKgPerAcre),
+      potassiumKgPerAcre: outcome.data.potassiumKgPerAcre === null ? prev.potassiumKgPerAcre : String(outcome.data.potassiumKgPerAcre),
+    }))
+    setReportStatus('success')
+    setReportMessage(outcome.data.warnings.length > 0 ? outcome.data.warnings.join(' ') : 'Soil values imported. Complete the remaining farm details below.')
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -84,6 +111,16 @@ const FarmProfileForm: React.FC = () => {
       </h2>
 
       <div className="card">
+        <div className="soil-report-upload">
+          <input id="soil-report-file" type="file" accept="image/*,.pdf,application/pdf" capture="environment" onChange={handleReportChange} style={{ display: 'none' }} />
+          <label htmlFor="soil-report-file" className="soil-report-upload-button">
+            {reportStatus === 'uploading' ? <Loader2 size={18} className="spin" /> : <Upload size={18} />}
+            {reportStatus === 'uploading' ? 'Reading soil report…' : 'Upload Soil Health Card (photo or PDF)'}
+          </label>
+          <p className="soil-report-upload-hint"><FileText size={15} /> pH, N, P and K will be read automatically. No manual entry needed.</p>
+          {reportMessage && <p className={`soil-report-upload-message ${reportStatus === 'error' ? 'is-error' : ''}`}>{reportMessage}</p>}
+        </div>
+
         {savedProfile && (
           <div className="alert alert-info">
             <div>
@@ -130,6 +167,7 @@ const FarmProfileForm: React.FC = () => {
                 id="ph" 
                 name="ph" 
                 className="form-control" 
+                readOnly
                 value={formData.ph} 
                 onChange={handleChange} 
                 placeholder="e.g. 6.5" 
@@ -145,6 +183,7 @@ const FarmProfileForm: React.FC = () => {
                   id="nitrogenKgPerAcre" 
                   name="nitrogenKgPerAcre" 
                   className="form-control" 
+                  readOnly
                   value={formData.nitrogenKgPerAcre} 
                   onChange={handleChange} 
                   placeholder="e.g. 80" 
@@ -162,6 +201,7 @@ const FarmProfileForm: React.FC = () => {
                   id="phosphorusKgPerAcre" 
                   name="phosphorusKgPerAcre" 
                   className="form-control" 
+                  readOnly
                   value={formData.phosphorusKgPerAcre} 
                   onChange={handleChange} 
                   placeholder="e.g. 40" 
@@ -179,6 +219,7 @@ const FarmProfileForm: React.FC = () => {
                   id="potassiumKgPerAcre" 
                   name="potassiumKgPerAcre" 
                   className="form-control" 
+                  readOnly
                   value={formData.potassiumKgPerAcre} 
                   onChange={handleChange} 
                   placeholder="e.g. 40" 
