@@ -14,7 +14,7 @@ import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { createStorageBackend } from "./storage/bucketStore";
 import { createDocumentBackend } from "./storage/documentStore";
-import { createFileBackend } from "./storage/fileStore";
+import { createFileBackend, createMarketplaceArchiveBackend } from "./storage/fileStore";
 import { createSessionRoutes } from "./routes/sessionRoutes";
 import { createAiRoutes } from "./routes/aiRoutes";
 import { createLiveRoutes } from "./routes/liveRoutes";
@@ -36,6 +36,7 @@ function main(): void {
   const storage = createStorageBackend();
   const documents = createDocumentBackend();
   const files = createFileBackend();
+  const marketplaceArchive = createMarketplaceArchiveBackend();
 
   const app = express();
   app.use(cors());
@@ -55,7 +56,7 @@ function main(): void {
   app.use("/api", createMemoryRoutes());
   app.use("/api", createVoiceRoutes());
   app.use("/api", createWeatherRoutes());
-  app.use("/api", createMarketplaceRoutes(documents));
+  app.use("/api", createMarketplaceRoutes(documents, marketplaceArchive));
   app.use("/api", createSoilReportRoutes(files, documents));
   getMemoryBackend(); // resolved eagerly so its startup log appears alongside storage/Gemini
 

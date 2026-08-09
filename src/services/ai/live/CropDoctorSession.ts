@@ -13,11 +13,15 @@
  * Session resumption: a Live API WebSocket connection has a ~10-minute lifetime regardless of
  * activity (confirmed against ai.google.dev/gemini-api/docs/live-session, 2026-08), so an
  * unexpected disconnect is a NORMAL event for any call longer than that, not a failure. The
- * server bakes `sessionResumption: { transparent: true }` into every minted token; this class
- * tracks the resulting `sessionResumptionUpdate` handle and, on an unexpected close, mints one
- * fresh token carrying that handle forward and reconnects automatically — the farmer sees a
- * brief "reconnecting…" status rather than the call silently dying mid-diagnosis. Capped at one
- * automatic attempt so a genuinely dead network doesn't retry forever.
+ * server bakes `sessionResumption: { handle }` into every minted token — NOT `transparent: true`,
+ * which is a Vertex AI / Gemini Enterprise Agent Platform-only flag this app's plain
+ * `GEMINI_API_KEY` (Gemini Developer API mode) cannot use; Google's own server rejects it
+ * ("transparent parameter is only supported in Gemini Enterprise Agent Platform mode") before a
+ * session can even open. Resumption still works without it: this class tracks the resulting
+ * `sessionResumptionUpdate` handle and, on an unexpected close, mints one fresh token carrying
+ * that handle forward and reconnects automatically — the farmer sees a brief "reconnecting…"
+ * status rather than the call silently dying mid-diagnosis. Capped at one automatic attempt so a
+ * genuinely dead network doesn't retry forever.
  */
 import { GoogleGenAI, Modality, type LiveServerMessage, type Session } from "@google/genai";
 import type { Crop, PestRisk } from "../../../domain/models/models";
@@ -200,7 +204,8 @@ export class CropDoctorSession {
         responseModalities: [Modality.AUDIO],
         inputAudioTranscription: {},
         outputAudioTranscription: {},
-        sessionResumption: { handle: this.resumptionHandle ?? undefined, transparent: true },
+        // No `transparent: true` here either — see the class doc comment above for why.
+        sessionResumption: { handle: this.resumptionHandle ?? undefined },
       },
       callbacks: {
         onopen: () => this.setStatus("connected"),

@@ -1,11 +1,12 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { MemoryDocumentBackend } from "../storage/documentStore";
+import { MemoryFileBackend, type FileBackend } from "../storage/fileStore";
 import { getMarketplaceStore, resetMarketplaceStore } from "./marketplaceStore";
 
 /** Fresh in-memory-backed store per test — exercises the exact same read/write paths a real Firestore backend would. */
-function freshStore() {
+function freshStore(archive?: FileBackend) {
   resetMarketplaceStore();
-  return getMarketplaceStore(new MemoryDocumentBackend());
+  return getMarketplaceStore(new MemoryDocumentBackend(), archive);
 }
 
 describe("MarketplaceStore", () => {
@@ -78,5 +79,62 @@ describe("MarketplaceStore", () => {
     const [a, b] = await Promise.all([store.syncOrder(order), store.syncOrder(order)]);
     expect([a, b].filter(Boolean)).toHaveLength(1);
     expect(await store.getOrdersForCrop("Tomato")).toHaveLength(1);
+  });
+
+  describe("archive (AGRIDB_BUCKET_NAME)", () => {
+    it("archives a synced order under farmconnect/orders/<externalId>.json", async () => {
+      const archive = new MemoryFileBackend();
+      const store = freshStore(archive);
+      const order = { externalId: "o1", productName: "Tomato", quantity: 2, unit: "kg", price: 30, requestedAt: Date.now() };
+
+      await store.syncOrder(order);
+
+      const raw = await archive.readFile("farmconnect/orders/o1.json");
+      expect(raw).not.toBeNull();
+      expect(JSON.parse(raw!.toString())).toMatchObject(order);
+    });
+
+    it("does not archive a duplicate sync of the same externalId (createIfAbsent already rejected it)", async () => {
+      const archive = new MemoryFileBackend();
+      const writeSpy = vi.spyOn(archive, "writeFile");
+      const store = freshStore(archive);
+      const order = { externalId: "o1", productName: "Tomato", quantity: 2, unit: "kg", price: 30, requestedAt: Date.now() };
+
+      await store.syncOrder(order);
+      await store.syncOrder(order);
+
+      expect(writeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("archives a published listing under farmconnect/listings/<id>.json", async () => {
+      const archive = new MemoryFileBackend();
+      const store = freshStore(archive);
+
+      const listing = await store.publishListing({ cropName: "Onion", quantity: 20, unit: "kg", price: 25 });
+
+      const raw = await archive.readFile(`farmconnect/listings/${listing.id}.json`);
+      expect(raw).not.toBeNull();
+      expect(JSON.parse(raw!.toString())).toMatchObject({ cropName: "Onion", id: listing.id });
+    });
+
+    it("an archive write failure never breaks the caller's response (best-effort, logged not thrown)", async () => {
+      const archive: FileBackend = {
+        writeFile: vi.fn().mockRejectedValue(new Error("bucket unreachable")),
+        readFile: vi.fn().mockResolvedValue(null),
+      };
+      const store = freshStore(archive);
+
+      await expect(
+        store.syncOrder({ externalId: "o1", productName: "Tomato", quantity: 1, unit: "kg", price: 10, requestedAt: Date.now() })
+      ).resolves.toBe(true);
+      await expect(store.publishListing({ cropName: "Onion", quantity: 1, unit: "kg", price: 10 })).resolves.toBeTruthy();
+    });
+
+    it("works exactly as before with no archive configured at all", async () => {
+      const store = freshStore(); // no archive arg
+      await expect(
+        store.syncOrder({ externalId: "o1", productName: "Tomato", quantity: 1, unit: "kg", price: 10, requestedAt: Date.now() })
+      ).resolves.toBe(true);
+    });
   });
 });

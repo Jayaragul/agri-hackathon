@@ -3,10 +3,12 @@ import { useFarmStore } from '../../state/farmStore'
 import { analyzeSoilGaps } from '../../engine/soilGapAnalysis'
 import { generateFinancialScenarios } from '../../engine/financialEngine'
 import { sampleCorrections } from '../../data/sample/corrections'
-import { Printer, Calendar, IndianRupee, Sprout, AlertTriangle } from 'lucide-react'
+import { Printer, Calendar, IndianRupee, Sprout, AlertTriangle, FileDown, Loader2 } from 'lucide-react'
+import { useFarmReportGenerator } from '../farm-report/useFarmReportGenerator'
 
 const PrintableActionPlan: React.FC = () => {
   const { profile, selectedCrop, reset, recommendations, setStage } = useFarmStore()
+  const { generate: generateFullReport, generating: generatingFullReport, error: fullReportError, canGenerate: canGenerateFullReport } = useFarmReportGenerator()
 
   const { analysis, financials } = useMemo(() => {
     if (!profile || !selectedCrop) return { analysis: null, financials: null }
@@ -40,6 +42,14 @@ const PrintableActionPlan: React.FC = () => {
           <button className="btn btn-primary" onClick={() => setStage('calendar')}>
             <Calendar size={18} style={{ marginRight: '8px' }} /> Cultivation Calendar
           </button>
+          <button className="btn btn-primary" onClick={generateFullReport} disabled={!canGenerateFullReport || generatingFullReport}>
+            {generatingFullReport ? (
+              <Loader2 size={18} style={{ marginRight: '8px' }} className="spin" />
+            ) : (
+              <FileDown size={18} style={{ marginRight: '8px' }} />
+            )}
+            {generatingFullReport ? 'Building report…' : 'Download Full Report'}
+          </button>
           <button className="btn btn-outline" onClick={handlePrint}>
             <Printer size={18} style={{ marginRight: '8px' }} /> Print PDF
           </button>
@@ -48,6 +58,13 @@ const PrintableActionPlan: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {fullReportError && (
+        <div className="alert alert-info print-hide" style={{ marginBottom: '24px', borderLeftColor: 'var(--brand-red)' }}>
+          <AlertTriangle size={20} style={{ flexShrink: 0, color: 'var(--brand-red)' }} />
+          <div className="alert-desc">{fullReportError}</div>
+        </div>
+      )}
 
       {/* --- PRINTABLE AREA START --- */}
       <div className="printable-plan card" style={{ padding: '48px 40px' }}>

@@ -18,6 +18,7 @@
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import type { DocumentBackend } from "../storage/documentStore";
+import type { FileBackend } from "../storage/fileStore";
 import { analyzeMarketDemand } from "../services/marketDemand";
 import { getMarketplaceStore } from "../services/marketplaceStore";
 
@@ -69,9 +70,9 @@ function describeError(err: unknown): string {
   return String(err);
 }
 
-export function createMarketplaceRoutes(documents: DocumentBackend): Router {
+export function createMarketplaceRoutes(documents: DocumentBackend, archive?: FileBackend): Router {
   const router = Router();
-  const store = getMarketplaceStore(documents);
+  const store = getMarketplaceStore(documents, archive);
 
   router.post("/marketplace/orders/sync", async (req: Request, res: Response) => {
     const parsed = SyncOrdersRequestSchema.safeParse(req.body);

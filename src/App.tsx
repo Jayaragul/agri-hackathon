@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { useFarmStore } from './state/farmStore'
-import { Bot, Check, Mic, Sprout, Stethoscope, Sun } from 'lucide-react'
+import { Check, Mic, Sprout, Sun } from 'lucide-react'
 
 // Domain Features
 import FarmProfileForm from './features/farm-profile/FarmProfileForm'
@@ -120,37 +120,29 @@ function App() {
             </button>
           ) : (
             <>
+              {/* Icon-only by design — see the user's request to drop Ask Advisor/Crop Doctor as
+                  separate top-level entries and keep just these two. Ask Advisor (stage
+                  'advisor') and Crop Doctor (stage 'crop-doctor') are NOT deleted: Crop Doctor is
+                  still one tap away via Audio Mode's own in-screen "Video" toggle
+                  (VoiceMode's onSwitchToVideo), and both stages still render fine if reached any
+                  other way — they're just no longer linked from this header. */}
               <button
                 type="button"
-                className="btn btn-secondary"
-                style={{ height: '40px', padding: '0 16px', fontSize: '14px' }}
-                onClick={() => setStage('advisor')}
-              >
-                <Bot size={16} /> Ask Advisor
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ height: '40px', padding: '0 16px', fontSize: '14px' }}
+                className="btn btn-secondary icon-nav-btn"
                 onClick={() => setStage('digital-twin')}
+                title="Digital Twin"
+                aria-label="Digital Twin"
               >
-                <Sprout size={16} /> Digital Twin
+                <Sprout size={20} />
               </button>
               <button
                 type="button"
-                className="btn btn-secondary"
-                style={{ height: '40px', padding: '0 16px', fontSize: '14px' }}
-                onClick={() => setStage('crop-doctor')}
-              >
-                <Stethoscope size={16} /> Crop Doctor
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ height: '40px', padding: '0 16px', fontSize: '14px' }}
+                className="btn btn-secondary icon-nav-btn"
                 onClick={() => setStage('audio-mode')}
+                title="Audio Mode"
+                aria-label="Audio Mode"
               >
-                <Mic size={16} /> Audio Mode
+                <Mic size={20} />
               </button>
             </>
           )}
