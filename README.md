@@ -171,6 +171,19 @@ required for the app to run:
 
 See `.claude/skills/krishi-mitra-storage/SKILL.md` for the exact layout and an audit CLI.
 
+## FarmConnect marketplace integration
+
+`marketplace/` is a separate, independently-deployed vanilla-JS consumer/farmer app with no
+server of its own — Krishi Mitra's backend is the shared seam between the two:
+
+- FarmConnect pushes every new consumer request in, so a farmer's "what's the demand for my
+  crop" question gets a real number, not nothing.
+- Krishi Mitra pushes a new "let's sell it" listing out, and FarmConnect notifies every consumer
+  who had an open request for that crop.
+
+Demand analysis is purely arithmetic (request count, quantity, median price) — no model call, no
+AI-originated number ever reaches a farmer's pricing decision.
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
