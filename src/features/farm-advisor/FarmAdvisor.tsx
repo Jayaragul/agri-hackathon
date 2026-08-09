@@ -123,7 +123,7 @@ const FarmAdvisor: React.FC = () => {
   }
 
   return (
-    <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+    <div className="farm-advisor-shell" style={{ maxWidth: '760px', margin: '0 auto' }}>
       <div className="section-badge">
         <span className="section-badge-dot pulse" />
         <span className="section-badge-text">AI Farm Advisor</span>
@@ -137,7 +137,7 @@ const FarmAdvisor: React.FC = () => {
       </p>
 
       {messages.length === 0 && !loadingHistory && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+        <div className="farm-advisor-suggestions" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
           {SUGGESTED_PROMPTS.map((prompt) => (
             <button key={prompt} type="button" className="btn btn-secondary" style={{ width: 'auto', height: '36px', padding: '0 14px', fontSize: '13px' }} onClick={() => ask(prompt)}>
               {prompt}
@@ -186,7 +186,7 @@ const FarmAdvisor: React.FC = () => {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="farm-advisor-compose" style={{ display: 'flex', gap: '8px' }}>
           <input
             type="text"
             className="form-control"
