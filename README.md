@@ -127,6 +127,18 @@ reference. The ones you'll actually reach for:
 | `GCS_BUCKET_NAME` | Session data + uploaded soil-report files (Cloud Storage) |
 | `FIRESTORE_ENABLED=true` | Marketplace + soil-report metadata (Firestore) |
 
+## Testing
+
+```bash
+npm run typecheck              # frontend
+npx vitest run                 # frontend test suite
+npm --prefix server run build  # server typecheck + build
+npm --prefix server test       # server test suite
+```
+
+Both suites are enforced clean before anything merges — deterministic engines, storage backends,
+and AI-harness fallback behavior all have direct unit tests, not just end-to-end smoke checks.
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
