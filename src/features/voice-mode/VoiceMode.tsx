@@ -73,7 +73,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
       <input
         ref={labReportInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.pdf,application/pdf"
         capture="environment"
         style={{ display: 'none' }}
         onChange={handleLabReportChange}

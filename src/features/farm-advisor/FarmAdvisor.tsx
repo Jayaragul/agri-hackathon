@@ -11,6 +11,7 @@ import { getFarmContextSnapshot } from '../../services/context/farmContext'
 import { describeProactiveAlert } from '../../engine/proactiveEngine'
 import { getWeatherProactiveAlerts } from '../../services/weather/weatherContext'
 import { runFarmAdvisorToolLoop } from '../../services/ai/runtime/farmAdvisorTools'
+import { marketplaceHandoff } from '../../services/marketplace/farmConnect'
 
 /**
  * General "ask anything" farm advisor — open-ended, unlike the Cultivation Calendar's
@@ -102,14 +103,15 @@ const FarmAdvisor: React.FC = () => {
         upcomingAlerts: [...upcomingAlerts, ...weatherAlerts].map(describeProactiveAlert),
         liveToolResults: toolLoop.toolContextLines,
       })
+      const answerWithHandoff = marketplaceHandoff(outcome.data.answer, questionText)
       const afterAssistant = await storage.appendAdvisorMessage({
         role: 'assistant',
-        text: outcome.data.answer,
+        text: answerWithHandoff,
         citedFacts: outcome.data.topics,
         source: outcome.source,
       })
       setMessages(afterAssistant)
-      void recordMemory('assistant', outcome.data.answer)
+      void recordMemory('assistant', answerWithHandoff)
     } catch {
       const afterAssistant = await storage.appendAdvisorMessage({
         role: 'assistant',

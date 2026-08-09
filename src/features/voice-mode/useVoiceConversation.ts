@@ -3,7 +3,8 @@ import { useFarmStore } from "../../state/farmStore";
 import { getA2AOrchestrator } from "../../services/ai/a2a";
 import type { FarmAdvisorAnswer } from "../../services/ai";
 import type { SoilReportExtraction } from "../../services/ai/contracts/aiSchemas";
-import { fileToInlineImage } from "../../services/ai/providers/GeminiSoilReportExtractor";
+import { fileToInlineImage, toPartialProfile } from "../../services/ai/providers/GeminiSoilReportExtractor";
+import { isMarketplaceIntent, marketplaceHandoff } from "../../services/marketplace/farmConnect";
 import { getSessionStorage } from "../../services/storage";
 import type { ChatMessage } from "../../services/storage";
 import { recallMemories, recordMemory } from "../../services/memory/memoryClient";
@@ -73,6 +74,7 @@ export function useVoiceConversation(): VoiceConversationState {
     declaredSituation,
     setDeclaredSituation,
     setLabReport,
+    setProfile,
     logTimelineEvent,
   } = useFarmStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -201,15 +203,18 @@ export function useVoiceConversation(): VoiceConversationState {
       for (const record of toolLoop.toolCallRecords) activity.push(describeFarmAdvisorToolCall(record));
       setLastActivity(activity);
 
+      const answerWithHandoff = marketplaceHandoff(outcome.data.answer, trimmed);
       const afterAssistant = await storage.appendAdvisorMessage({
         role: "assistant",
-        text: outcome.data.answer,
+        text: answerWithHandoff,
         citedFacts: outcome.data.topics,
         source: outcome.source,
       });
       setMessages(afterAssistant);
-      void recordMemory("assistant", outcome.data.answer);
-      answer = outcome.data.answer;
+      void recordMemory("assistant", answerWithHandoff);
+      answer = isMarketplaceIntent(trimmed)
+        ? `${outcome.data.answer} To sell your produce, open FarmConnect from the link shown in the chat.`
+        : outcome.data.answer;
     } catch (err) {
       setPhase("error");
       setErrorMessage(err instanceof VoiceProxyError ? err.message : "That did not go through — please try again.");
@@ -246,6 +251,12 @@ export function useVoiceConversation(): VoiceConversationState {
       }
 
       setLabReport(outcome.data);
+      if (profile) {
+        const extractedProfile = toPartialProfile(outcome.data);
+        if (Object.keys(extractedProfile).length > 0) {
+          setProfile({ ...profile, ...extractedProfile });
+        }
+      }
       const readings = [
         outcome.data.ph !== null ? `pH ${outcome.data.ph}` : null,
         outcome.data.nitrogenKgPerAcre !== null ? `N ${outcome.data.nitrogenKgPerAcre}` : null,

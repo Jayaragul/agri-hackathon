@@ -32,8 +32,9 @@ const PH_MAX = 14;
 const NUTRIENT_MIN = 0;
 const NUTRIENT_MAX = 500;
 
-/** Image types the multimodal endpoint reliably accepts. */
-const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+/** Image/document types the multimodal endpoint reliably accepts. */
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
+const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
 
 /** Accept a number only if it is finite and inside the allowed range. Never clamps. */
 function acceptNumber(value: unknown, min: number, max: number): number | null {
@@ -82,6 +83,10 @@ export function toPartialProfile(
 export function fileToInlineImage(file: File): Promise<InlineImage> {
   return new Promise<InlineImage>((resolve, reject) => {
     try {
+      if (!file || file.size <= 0 || file.size > MAX_UPLOAD_BYTES) {
+        reject(new Error("The selected file is empty or larger than 12 MB."));
+        return;
+      }
       const declaredType = typeof file?.type === "string" ? file.type : "";
       const mimeType =
         SUPPORTED_IMAGE_TYPES.indexOf(declaredType) !== -1 ? declaredType : "image/jpeg";
