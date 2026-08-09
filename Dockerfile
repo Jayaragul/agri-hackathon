@@ -40,7 +40,7 @@ RUN npm run build
 FROM node:20-slim AS server-build
 WORKDIR /app/server
 
-COPY server/package.json server/package-lock.json ./
+COPY server/package.json server/package-lock.json server/.npmrc ./
 RUN npm ci
 
 COPY server/src ./src
@@ -57,7 +57,7 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Production-only server dependencies.
-COPY server/package.json server/package-lock.json ./server/
+COPY server/package.json server/package-lock.json server/.npmrc ./server/
 RUN cd server && npm ci --omit=dev
 
 # Compiled server code.
