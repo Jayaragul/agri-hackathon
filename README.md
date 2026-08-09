@@ -92,6 +92,26 @@ detail lives in [`catalog.md`](catalog.md).
 └── catalog.md                  Full agent & skill catalog
 ```
 
+## Getting started
+
+Requires Node.js 20+.
+
+```bash
+# Install frontend + backend dependencies
+npm install
+npm --prefix server install
+
+# Copy the env template (every variable is optional — the app runs fully offline with none set)
+cp .env.example .env
+
+# Run frontend + backend together (recommended — mirrors production's single-origin setup)
+npm run dev:full
+```
+
+The app opens at `http://localhost:5173` (or the next free port). With no `.env` values set,
+every AI feature transparently falls back to a deterministic local answer — a missing key is the
+normal path, not an error.
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
