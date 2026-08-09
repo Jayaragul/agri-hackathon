@@ -195,6 +195,18 @@ Stated plainly rather than left for someone else to discover:
 - Marketplace/soil-report data in Firestore is demand-signal data, not a transactional system of
   record — treat it accordingly.
 
+## Contributing
+
+New agents follow a fixed pattern documented at the bottom of [`catalog.md`](catalog.md#how-a-new-agent-gets-added):
+write the task, wrap it in an agent class, register it with the A2A orchestrator, document it —
+and if the new skill could ever influence a score, ranking, or financial figure, stop: that
+decision belongs in `src/engine/`, not the AI layer.
+
+## Acknowledgments
+
+Built for a Google Developer Groups hackathon under the "Solving world hunger using AI" track,
+by team **code-sastra**.
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
