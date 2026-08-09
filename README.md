@@ -18,6 +18,24 @@ crop choice or a mistimed input purchase can mean a season of debt.
 Krishi Mitra is designed specifically for a **first-time, possibly non-literate user** on a
 budget Android phone: audio-first, plain language, and honest about what it doesn't know.
 
+## Key features
+
+- 🎙️ **Audio Mode** — the app's default landing screen. A farmer speaks naturally in Tamil or
+  English; no wizard, no forms, no reading required to get a first useful answer.
+- 🌱 **Crop recommendation wizard** — scores every crop in the dataset against the farmer's soil
+  (pH, N/P/K), land size, and region, with a transparent, explainable score breakdown.
+- 🧪 **Soil report reading** — photograph or upload a PDF of a Soil Health Card; Gemini extracts
+  the numbers, the farmer's own entry is never silently overwritten.
+- 📅 **Cultivation calendar** — a deterministic, day-by-day plan from sowing to harvest, with
+  proactive pest-risk and weather alerts.
+- 💰 **Financial planning** — cost, revenue, and break-even scenarios for the recommended crop.
+- 🩺 **Crop Doctor** — a live voice-and-video assistant that matches a photographed pest/disease
+  against a fixed, verified reference list — never an open-ended, unverifiable diagnosis.
+- 🛒 **FarmConnect marketplace integration** — real consumer demand data (not a guess) feeds
+  "what's the demand for my crop" answers, and lets a farmer list produce for sale.
+- 🧠 **Long-term memory** — remembers durable facts about a farmer across conversations, via
+  mem0, without ever replaying full chat history.
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
