@@ -65,6 +65,12 @@ describe("buildLocalFarmAnswer", () => {
     expect(reply.answer).toContain("could not find");
   });
 
+  it("uses Tamil for the offline voice fallback", () => {
+    const reply = buildLocalFarmAnswer("asdf qwer zxcv nonsense", demoProfile, null, null, true);
+    expect(reply.answer).toContain("சரிபார்க்கப்பட்ட");
+    expect(reply.answer).not.toContain("I could not find");
+  });
+
   it("answers from the knowledge base and cites the matched question as a topic", () => {
     const reply = buildLocalFarmAnswer("What is NPK?", null, null, null);
     expect(reply.topics.length).toBeGreaterThan(0);

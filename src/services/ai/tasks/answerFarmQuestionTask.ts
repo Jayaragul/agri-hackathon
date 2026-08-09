@@ -26,7 +26,7 @@ export function createAnswerFarmQuestionTask(): AiTaskDefinition<AnswerFarmQuest
     geminiResponseSchema: GEMINI_RESPONSE_SCHEMAS["answer-farm-question"],
 
     fallback(input: AnswerFarmQuestionInput): FarmAdvisorAnswer {
-      return buildLocalFarmAnswer(input.question, input.profile, input.crop, input.topRecommendation);
+      return buildLocalFarmAnswer(input.question, input.profile, input.crop, input.topRecommendation, input.spokenStyle);
     },
 
     /** Keyed on the question, the farm's identifying facts, the farmer's name, and whatever they've declared/logged/predicted, so two different farms (or two farmers, or two states of the same farm) never share a cached, mis-personalised answer. */

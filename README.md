@@ -1,8 +1,10 @@
-# 🌾 Krishi Mitra
+# 🌾 Thulir
+
+**Smart farming, rooted locally.**
 
 **AI-native decision support for smallholder farmers in Tamil Nadu, India.**
 
-Krishi Mitra helps a beginner farmer decide *what to grow, how to fix their soil, what it will
+Thulir helps a beginner farmer decide *what to grow, how to fix their soil, what it will
 cost, what could go wrong, and what to do next* — combining a deterministic agronomy engine with
 Gemini-powered agents that explain, perceive, and converse, but never decide.
 
@@ -33,7 +35,7 @@ much fertilizer to buy, when to sow — with the least reliable information, oft
 guesswork, a neighbor's advice, or a fertilizer dealer with an incentive to oversell. A wrong
 crop choice or a mistimed input purchase can mean a season of debt.
 
-Krishi Mitra is designed specifically for a **first-time, possibly non-literate user** on a
+Thulir is designed specifically for a **first-time, possibly non-literate user** on a
 budget Android phone: audio-first, plain language, and honest about what it doesn't know.
 
 ## The solution
@@ -200,11 +202,11 @@ See `.claude/skills/krishi-mitra-storage/SKILL.md` for the exact layout and an a
 ## FarmConnect marketplace integration
 
 `marketplace/` is a separate, independently-deployed vanilla-JS consumer/farmer app with no
-server of its own — Krishi Mitra's backend is the shared seam between the two:
+server of its own — Thulir's backend is the shared seam between the two:
 
 - FarmConnect pushes every new consumer request in, so a farmer's "what's the demand for my
   crop" question gets a real number, not nothing.
-- Krishi Mitra pushes a new "let's sell it" listing out, and FarmConnect notifies every consumer
+- Thulir pushes a new "let's sell it" listing out, and FarmConnect notifies every consumer
   who had an open request for that crop.
 
 Demand analysis is purely arithmetic (request count, quantity, median price) — no model call, no

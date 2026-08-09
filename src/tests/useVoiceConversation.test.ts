@@ -224,7 +224,7 @@ describe("useVoiceConversation", () => {
     act(() => result.current.handleMicClick());
     await waitFor(() => expect(result.current.phase).toBe("idle"));
     expect(mocks.recorderStop).toHaveBeenCalledOnce();
-    expect(mocks.transcribeAudio).toHaveBeenCalledWith("abc", "audio/wav");
+    expect(mocks.transcribeAudio).toHaveBeenCalledWith("abc", "audio/wav", "ta-IN");
     expect(mocks.dispatch).toHaveBeenCalledWith("answer-farm-question", expect.objectContaining({ question: "When should I sow?" }));
   });
 
