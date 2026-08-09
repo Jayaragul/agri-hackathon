@@ -156,6 +156,21 @@ gcloud run deploy krishi-mitra \
 Full runbook — API enablement, Firestore/bucket setup, IAM grants, rollback — is in
 [`deploy/DEPLOY.md`](deploy/DEPLOY.md).
 
+## Storage architecture
+
+Three independently-optional backends, each chosen for what it's actually good at — never
+required for the app to run:
+
+- **GCS (JSON blobs)** — session profile + chat threads, one blob per session, no concurrent
+  writers to worry about.
+- **GCS (binary files)** — original uploaded soil-report photos/PDFs.
+- **Firestore** — marketplace orders/listings and soil-report metadata: anything written
+  concurrently by more than one caller gets its own document, so two Cloud Run instances syncing
+  at once can never clobber each other's write — the actual fix for a real race the earlier
+  single-JSON-blob design had.
+
+See `.claude/skills/krishi-mitra-storage/SKILL.md` for the exact layout and an audit CLI.
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
