@@ -102,7 +102,7 @@ function App() {
 
   return (
     <div className={`app-container${isAudioMode ? ' app-container-immersive' : ''}`}>
-      <header className={`app-header${isAudioMode ? ' app-header-dark' : ''}`}>
+      <header className="app-header">
         <img className="brand-logo brand-logo-header" src="/thulir-logo.png" alt="Thulir logo" />
         <div className="brand-lockup">
           <h1 style={{ fontSize: '24px' }}>Thulir</h1>
@@ -112,7 +112,7 @@ function App() {
           {isSpecialMode ? (
             <button
               type="button"
-              className={`btn btn-secondary${isAudioMode ? ' btn-secondary-dark' : ''}`}
+              className="btn btn-secondary"
               style={{ height: '40px', padding: '0 16px', fontSize: '14px' }}
               onClick={() => setStage(lastWizardStage.current)}
             >

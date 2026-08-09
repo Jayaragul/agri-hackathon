@@ -21,14 +21,14 @@ const GlassModeToggle: React.FC<GlassModeToggleProps> = ({ active, onChange }) =
   <div className="voice-mode-tabs">
     <button
       type="button"
-      className={`voice-mode-tab${active === 'audio' ? ' active' : ''}`}
+      className={`voice-mode-tab voice-mode-tab-audio${active === 'audio' ? ' active' : ''}`}
       onClick={() => onChange('audio')}
     >
       <Mic size={13} /> Audio
     </button>
     <button
       type="button"
-      className={`voice-mode-tab${active === 'video' ? ' active' : ''}`}
+      className={`voice-mode-tab voice-mode-tab-video${active === 'video' ? ' active' : ''}`}
       onClick={() => onChange('video')}
     >
       <Video size={13} /> Video

@@ -114,7 +114,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
 
       <div className="voice-transcript" ref={transcriptRef}>
         {messages.length === 0 ? (
-          <p style={{ fontSize: '13px', color: 'rgba(242,242,243,0.4)', textAlign: 'center', margin: 'auto' }}>
+          <p style={{ fontSize: '13px', color: 'var(--muted-foreground)', textAlign: 'center', margin: 'auto' }}>
             {answerText || 'Ask me anything about your farm.'}
           </p>
         ) : (
@@ -138,7 +138,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
         )}
       </div>
 
-      <div className="voice-hero">
+      <div className={`voice-hero${stateClass}`}>
         <div className={`voice-waveform-wrap${stateClass}`}>
           <span className="voice-waveform-bar" />
           <span className="voice-waveform-bar" />
@@ -161,16 +161,16 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
         <div>
           <p className="voice-phase-label">{PHASE_LABEL[phase]}</p>
           {errorMessage && (
-            <p style={{ fontSize: '13px', color: '#F28B82', marginTop: '8px', maxWidth: '380px' }}>{errorMessage}</p>
+            <p style={{ fontSize: '13px', color: '#EA4335', marginTop: '8px', maxWidth: '380px' }}>{errorMessage}</p>
           )}
           {voiceReady === false && !errorMessage && (
-            <p style={{ fontSize: '12px', color: 'rgba(242,242,243,0.35)', marginTop: '8px' }}>Voice isn't set up on this server — type above instead.</p>
+            <p style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginTop: '8px' }}>Voice isn't set up on this server — type above instead.</p>
           )}
           {labReportMessage && !errorMessage && (
             <p
               style={{
                 fontSize: '12px',
-                color: labReportStatus === 'error' ? '#F28B82' : 'rgba(242,242,243,0.45)',
+                color: labReportStatus === 'error' ? '#EA4335' : labReportStatus === 'success' ? '#34A853' : 'var(--muted-foreground)',
                 marginTop: '8px',
                 maxWidth: '340px',
               }}
@@ -182,7 +182,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
       </div>
 
       <span className="voice-handle-bar" style={{ marginBottom: '12px' }} />
-      <p style={{ fontSize: '11px', color: 'rgba(242,242,243,0.3)', textAlign: 'center', paddingBottom: '20px' }}>
+      <p style={{ fontSize: '11px', color: 'var(--muted-foreground)', textAlign: 'center', paddingBottom: '20px' }}>
         Explains and personalizes — never changes a crop score, a cost, or a safety threshold.
       </p>
     </div>
