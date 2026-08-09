@@ -112,6 +112,21 @@ The app opens at `http://localhost:5173` (or the next free port). With no `.env`
 every AI feature transparently falls back to a deterministic local answer — a missing key is the
 normal path, not an error.
 
+## Environment variables
+
+Every variable is optional; see [`.env.example`](.env.example) for the full, heavily-commented
+reference. The ones you'll actually reach for:
+
+| Variable | Purpose |
+|---|---|
+| `GEMINI_API_KEY` | Server-side Gemini key (never sent to the browser) |
+| `VITE_AI_TRANSPORT=server` | Routes AI calls through this app's own backend — the production setting |
+| `SARVAM_API_KEY` | Powers Audio Mode's speech-to-text/text-to-speech |
+| `GOOGLE_WEATHER_API_KEY` | Proactive weather-based alerts |
+| `MEM0_API_KEY` | Long-term cross-conversation farmer memory |
+| `GCS_BUCKET_NAME` | Session data + uploaded soil-report files (Cloud Storage) |
+| `FIRESTORE_ENABLED=true` | Marketplace + soil-report metadata (Firestore) |
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
