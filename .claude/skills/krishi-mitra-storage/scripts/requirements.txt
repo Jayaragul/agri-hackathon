@@ -1,0 +1,2 @@
+google-cloud-firestore>=2.19,<3
+google-cloud-storage>=2.18,<3

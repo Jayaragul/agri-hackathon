@@ -18,6 +18,31 @@ describe("findKnowledgeEntries", () => {
     const matches = findKnowledgeEntries("soil pH nitrogen phosphorus potassium fertilizer pest irrigation", 1);
     expect(matches.length).toBeLessThanOrEqual(1);
   });
+
+  it("does not match on a shared substring across different words (crop vs crops)", () => {
+    // Regression: a naive `.includes()` scorer let the query word "crop" match "trichoderma"
+    // (whose question text mentions "protect crops") and "green_manure" (mentions "which crops
+    // to use"), returning biopesticide/green-manure content for a farmer asking which crop to
+    // grow in a given soil type — a completely unrelated topic with no real KB coverage.
+    const matches = findKnowledgeEntries("What crop should I grow in red soil?");
+    expect(matches).toEqual([]);
+  });
+
+  it("does not match a query word against an unrelated word it happens to be a substring of", () => {
+    // Regression: the old `.includes()` scorer matched "iron" (query) against "environment" or
+    // "fund" (query) against "fundamental" — any substring relationship counted as a hit. Exact
+    // whole-word matching means "cot" no longer matches "cotton", "man" no longer matches
+    // "manure"/"management", etc.
+    const matches = findKnowledgeEntries("man cot fund");
+    expect(matches).toEqual([]);
+  });
+
+  it("ignores generic question words (what/should/grow/etc) when scoring relevance", () => {
+    // "what", "should", and "grow" appear across nearly every KB question and would otherwise
+    // inflate scores for entries that share no real topic with the query.
+    const matches = findKnowledgeEntries("What should I grow?");
+    expect(matches).toEqual([]);
+  });
 });
 
 describe("summariseFarmContext", () => {

@@ -13,12 +13,16 @@ import path from "node:path";
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { createStorageBackend } from "./storage/bucketStore";
+import { createDocumentBackend } from "./storage/documentStore";
+import { createFileBackend } from "./storage/fileStore";
 import { createSessionRoutes } from "./routes/sessionRoutes";
 import { createAiRoutes } from "./routes/aiRoutes";
 import { createLiveRoutes } from "./routes/liveRoutes";
 import { createMemoryRoutes } from "./routes/memoryRoutes";
 import { createVoiceRoutes } from "./routes/voiceRoutes";
 import { createWeatherRoutes } from "./routes/weatherRoutes";
+import { createMarketplaceRoutes } from "./routes/marketplaceRoutes";
+import { createSoilReportRoutes } from "./routes/soilReportRoutes";
 import { getMemoryBackend } from "./services/memoryService";
 import { resolveGeminiApiKey, resolveSarvamApiKey, resolveWeatherApiKey } from "./services/env";
 
@@ -30,10 +34,16 @@ const FRONTEND_DIST = path.resolve(__dirname, "..", "..", "dist");
 
 function main(): void {
   const storage = createStorageBackend();
+  const documents = createDocumentBackend();
+  const files = createFileBackend();
 
   const app = express();
   app.use(cors());
-  app.use(express.json({ limit: "5mb" }));
+  // 15MB, not 5MB: a soil-report upload's JSON body carries a base64-encoded photo/PDF, which
+  // inflates the raw file size by ~4/3. `MAX_FILE_BYTES` in `soilReportRoutes.ts` caps the
+  // decoded file itself at 10MB — this just has to be large enough to let that request's JSON
+  // envelope through before the route-level check ever runs.
+  app.use(express.json({ limit: "15mb" }));
 
   app.get("/healthz", (_req: Request, res: Response) => {
     res.status(200).json({ status: "ok" });
@@ -45,6 +55,8 @@ function main(): void {
   app.use("/api", createMemoryRoutes());
   app.use("/api", createVoiceRoutes());
   app.use("/api", createWeatherRoutes());
+  app.use("/api", createMarketplaceRoutes(documents));
+  app.use("/api", createSoilReportRoutes(files, documents));
   getMemoryBackend(); // resolved eagerly so its startup log appears alongside storage/Gemini
 
   console.log(`Gemini proxy: ${resolveGeminiApiKey() ? "configured" : "no GEMINI_API_KEY set — /api/ai/generate will 503"}`);

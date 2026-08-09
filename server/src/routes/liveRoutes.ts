@@ -29,6 +29,8 @@ const LiveTokenRequestSchema = z.object({
   cropName: z.string().min(1).max(100),
   candidates: z.array(CandidateSchema).max(MAX_CANDIDATES),
   farmerContext: FarmerContextSchema.optional(),
+  /** Present only on an automatic reconnect after an unexpected disconnect — carries the Gemini-issued session-resumption handle forward so the conversation survives the new token. */
+  resumptionHandle: z.string().max(4000).optional(),
 });
 
 export function createLiveRoutes(): Router {
@@ -41,7 +43,12 @@ export function createLiveRoutes(): Router {
     }
 
     try {
-      const result = await createLiveToken(parsed.data.cropName, parsed.data.candidates, parsed.data.farmerContext);
+      const result = await createLiveToken(
+        parsed.data.cropName,
+        parsed.data.candidates,
+        parsed.data.farmerContext,
+        parsed.data.resumptionHandle
+      );
       return res.status(200).json(result);
     } catch (err) {
       const status = err instanceof LiveTokenError ? err.status : 500;

@@ -6,6 +6,9 @@ import type { SoilReportExtraction } from "../../services/ai/contracts/aiSchemas
 import { fileToInlineImage } from "../../services/ai/providers/GeminiSoilReportExtractor";
 import { getSessionStorage } from "../../services/storage";
 import type { ChatMessage } from "../../services/storage";
+import { getSessionId } from "../../services/session/sessionId";
+import { getLatestSoilReport, persistSoilReport } from "../../services/soilReport/soilReportClient";
+import { getLabReport } from "../../services/identity/labReport";
 import { recallMemories, recordMemory } from "../../services/memory/memoryClient";
 import { AudioRecorder } from "../../services/voice/AudioRecorder";
 import { getVoiceStatus, transcribeAudio, VoiceProxyError } from "../../services/voice/sarvamClient";
@@ -118,6 +121,21 @@ export function useVoiceConversation(): VoiceConversationState {
         }
       })
       .catch(() => {});
+
+    // Cross-device restore: `labReport` (services/identity/labReport.ts) is `localStorage`-scoped
+    // to one browser. If this device has never captured one locally, check whether an earlier
+    // upload from a DIFFERENT device already durably saved one for this session id
+    // (server/src/routes/soilReportRoutes.ts). A no-op when a local reading already exists, when
+    // no backend is deployed, or when nothing has ever been uploaded — never overwrites a local
+    // reading that's already there.
+    if (!getLabReport()) {
+      getLatestSoilReport(getSessionId())
+        .then((extraction) => {
+          if (!cancelled && extraction) setLabReport(extraction);
+        })
+        .catch(() => {});
+    }
+
     return () => {
       cancelled = true;
       recorderRef.current?.cancel();
@@ -181,6 +199,7 @@ export function useVoiceConversation(): VoiceConversationState {
         crop: selectedCrop ?? null,
         profile: profile ?? null,
         topRecommendation,
+        farmerName,
       });
       const outcome = await getA2AOrchestrator().dispatch<FarmAdvisorAnswer>("answer-farm-question", {
         question: trimmed,
@@ -246,6 +265,17 @@ export function useVoiceConversation(): VoiceConversationState {
       }
 
       setLabReport(outcome.data);
+
+      // Best-effort durable copy (Cloud Storage for the file, Firestore for the reading) — see
+      // `soilReportClient.ts`'s header. Fire-and-forget: the farmer's reading is ALREADY applied
+      // locally via `setLabReport` above, so this never blocks or can fail the visible upload.
+      void persistSoilReport({
+        sessionId: getSessionId(),
+        fileName: file.name || "lab-report",
+        image,
+        extraction: outcome.data,
+      });
+
       const readings = [
         outcome.data.ph !== null ? `pH ${outcome.data.ph}` : null,
         outcome.data.nitrogenKgPerAcre !== null ? `N ${outcome.data.nitrogenKgPerAcre}` : null,

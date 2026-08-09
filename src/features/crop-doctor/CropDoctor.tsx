@@ -21,6 +21,7 @@ const STATUS_LABEL: Record<CropDoctorStatus, string> = {
   idle: 'Not started',
   connecting: 'Connecting…',
   connected: 'Live',
+  reconnecting: 'Reconnecting…',
   closed: 'Ended',
   error: 'Error',
 }
@@ -29,6 +30,7 @@ const STATUS_BADGE_CLASS: Record<CropDoctorStatus, string> = {
   idle: 'badge',
   connecting: 'badge badge-amber',
   connected: 'badge badge-green',
+  reconnecting: 'badge badge-amber',
   closed: 'badge',
   error: 'badge badge-red',
 }
@@ -181,8 +183,8 @@ const CropDoctor: React.FC<CropDoctorProps> = ({ onSwitchToAudio }) => {
             </button>
           ) : (
             <button type="button" className="btn btn-secondary" style={{ flex: 1, background: 'var(--color-red-600)', color: '#fff' }} onClick={handleStop}>
-              {status === 'connecting' ? <Loader2 size={18} className="spin" /> : <PhoneOff size={18} />}
-              {status === 'connecting' ? 'Connecting…' : 'End Visit'}
+              {status === 'connecting' || status === 'reconnecting' ? <Loader2 size={18} className="spin" /> : <PhoneOff size={18} />}
+              {status === 'connecting' ? 'Connecting…' : status === 'reconnecting' ? 'Reconnecting…' : 'End Visit'}
             </button>
           )}
         </div>

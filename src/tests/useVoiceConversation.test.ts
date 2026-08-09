@@ -149,6 +149,21 @@ describe("useVoiceConversation", () => {
     expect(result.current.typedQuestion).toBe("");
   });
 
+  it("keeps typed questions working when the server reports that voice is not configured", async () => {
+    mocks.getVoiceStatus.mockResolvedValue({ configured: false, languageCode: "ta-IN" });
+    const { result } = renderHook(() => useVoiceConversation());
+    await waitFor(() => expect(result.current.voiceReady).toBe(false));
+
+    act(() => result.current.setTypedQuestion("What can I grow in red soil?"));
+    act(() => result.current.handleSend());
+
+    await waitFor(() => expect(result.current.phase).toBe("idle"));
+    expect(mocks.dispatch).toHaveBeenCalledWith(
+      "answer-farm-question",
+      expect.objectContaining({ question: "What can I grow in red soil?" })
+    );
+  });
+
   it("handleSend does nothing for an empty or whitespace-only question", async () => {
     const { result } = renderHook(() => useVoiceConversation());
     await waitFor(() => expect(result.current.voiceReady).toBe(true));
@@ -196,6 +211,35 @@ describe("useVoiceConversation", () => {
     expect(mocks.recorderStop).toHaveBeenCalledOnce();
     expect(mocks.transcribeAudio).toHaveBeenCalledWith("abc", "audio/wav");
     expect(mocks.dispatch).toHaveBeenCalledWith("answer-farm-question", expect.objectContaining({ question: "When should I sow?" }));
+  });
+
+  it("surfaces the proxy error and does not ask the advisor when transcription fails", async () => {
+    mocks.transcribeAudio.mockRejectedValue(
+      new mocks.MockVoiceProxyError(503, "Voice is not configured on this server.")
+    );
+    const { result } = renderHook(() => useVoiceConversation());
+    await waitFor(() => expect(result.current.voiceReady).toBe(true));
+
+    act(() => result.current.handleMicClick());
+    await waitFor(() => expect(result.current.phase).toBe("recording"));
+    act(() => result.current.handleMicClick());
+
+    await waitFor(() => expect(result.current.phase).toBe("error"));
+    expect(result.current.errorMessage).toBe("Voice is not configured on this server.");
+    expect(mocks.dispatch).not.toHaveBeenCalled();
+  });
+
+  it("returns to idle without dispatching when transcription contains no speech", async () => {
+    mocks.transcribeAudio.mockResolvedValue("   ");
+    const { result } = renderHook(() => useVoiceConversation());
+    await waitFor(() => expect(result.current.voiceReady).toBe(true));
+
+    act(() => result.current.handleMicClick());
+    await waitFor(() => expect(result.current.phase).toBe("recording"));
+    act(() => result.current.handleMicClick());
+
+    await waitFor(() => expect(result.current.phase).toBe("idle"));
+    expect(mocks.dispatch).not.toHaveBeenCalled();
   });
 
   it("surfaces a clear message when microphone access is denied", async () => {

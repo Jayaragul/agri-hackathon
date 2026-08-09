@@ -11,3 +11,7 @@ server/dist
 .env.local
 .env.*.local
 
+# Python (skills/scripts, e.g. .claude/skills/*/scripts/)
+__pycache__/
+*.pyc
+

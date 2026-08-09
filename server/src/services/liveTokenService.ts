@@ -9,7 +9,7 @@
  * instruction and tool declaration) — the browser cannot override any of it, so the Crop
  * Doctor's persona and its "the list is closed" guardrail can never be tampered with client-side.
  */
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI, MediaResolution, Modality } from "@google/genai";
 import { resolveGeminiApiKey } from "./env";
 import {
   buildCropDoctorSystemInstruction,
@@ -18,9 +18,45 @@ import {
   type PestCandidateSummary,
 } from "./cropDoctorConfig";
 
-const DEFAULT_LIVE_MODEL = "gemini-2.5-flash-native-audio-preview-09-2025";
+/**
+ * Verified-current live model chain (2026-08, confirmed against
+ * ai.google.dev/gemini-api/docs/live-api/capabilities). `gemini-3.1-flash-live-preview` is the
+ * current Gemini 3 generation native-audio-video live model; the two 2.5-generation dated
+ * variants are kept as fallbacks in case the 3.1 preview id is rotated or briefly unavailable —
+ * same "walk the chain on a model-not-found error" discipline as the text harness's
+ * `DEFAULT_MODEL_CHAIN` (`server/src/services/geminiProxy.ts`), just applied to token minting
+ * instead of a per-call REST request.
+ */
+const DEFAULT_LIVE_MODEL_CHAIN = [
+  "gemini-3.1-flash-live-preview",
+  "gemini-2.5-flash-native-audio-preview-12-2025",
+  "gemini-2.5-flash-native-audio-preview-09-2025",
+];
 const TOKEN_TTL_MINUTES = 30;
 const SESSION_START_WINDOW_MINUTES = 5;
+
+/** Only a missing/unusable model id justifies advancing to the next model in the chain — mirrors `GeminiSdkTransport`'s `looksLikeModelNotFound`. */
+function looksLikeModelNotFound(err: unknown): boolean {
+  const message = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+  return (
+    message.includes("not_found") ||
+    message.includes("not found") ||
+    message.includes("is not supported") ||
+    message.includes("unsupported model") ||
+    message.includes("unknown model")
+  );
+}
+
+/** Operator override (single id) if set, otherwise the verified chain, comma-split for a manual multi-id override. */
+function resolveLiveModelChain(): string[] {
+  const raw = process.env.GEMINI_LIVE_MODEL?.trim();
+  if (!raw) return DEFAULT_LIVE_MODEL_CHAIN;
+  const chain = raw
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return chain.length > 0 ? chain : DEFAULT_LIVE_MODEL_CHAIN;
+}
 
 export interface LiveTokenResult {
   token: string;
@@ -42,54 +78,74 @@ export class LiveTokenError extends Error {
  * Mint one ephemeral token, pre-configured for a Crop Doctor session on `cropName` with the
  * supplied verified candidate pest list. `uses: 1` means the token is good for exactly one
  * session — a farmer who disconnects and reconnects needs a fresh token, which is the intended
- * behaviour (each token maps to one intended conversation, not an open-ended credential).
+ * behaviour (each token maps to one intended conversation, not an open-ended credential); the
+ * fresh token still carries `resumptionHandle` forward when supplied, so the CONVERSATION itself
+ * (Gemini's own session state) survives a reconnect even though the token is single-use.
+ *
+ * Two settings close a real gap in the previous implementation, confirmed against
+ * ai.google.dev/gemini-api/docs/live-session (2026-08): a video session is capped at just 2
+ * minutes without `contextWindowCompression` — a farmer would have been silently disconnected
+ * mid-diagnosis. `mediaResolution: MEDIA_RESOLUTION_LOW` also cuts per-frame token cost (64 vs
+ * 256 tokens) for the periodic JPEG snapshots this app sends, which is plenty for pest-symptom
+ * classification and not a fine-detail-recognition task.
  */
 export async function createLiveToken(
   cropName: string,
   candidates: PestCandidateSummary[],
-  farmerContext?: FarmerContextSummary
+  farmerContext?: FarmerContextSummary,
+  resumptionHandle?: string
 ): Promise<LiveTokenResult> {
   const apiKey = resolveGeminiApiKey();
   if (!apiKey) {
     throw new LiveTokenError(503, "Gemini is not configured on the server (GEMINI_API_KEY is unset).");
   }
 
-  const model = process.env.GEMINI_LIVE_MODEL?.trim() || DEFAULT_LIVE_MODEL;
   const client = new GoogleGenAI({ apiKey });
   const expireTime = new Date(Date.now() + TOKEN_TTL_MINUTES * 60 * 1000).toISOString();
   const newSessionExpireTime = new Date(Date.now() + SESSION_START_WINDOW_MINUTES * 60 * 1000).toISOString();
 
-  try {
-    const token = await client.authTokens.create({
-      config: {
-        uses: 1,
-        expireTime,
-        newSessionExpireTime,
-        liveConnectConstraints: {
-          model,
-          config: {
-            responseModalities: [Modality.AUDIO],
-            systemInstruction: {
-              parts: [{ text: buildCropDoctorSystemInstruction(cropName, candidates, farmerContext) }],
+  const chain = resolveLiveModelChain();
+  let lastError: unknown = new Error("No live model in the chain could be reached.");
+
+  for (const model of chain) {
+    try {
+      const token = await client.authTokens.create({
+        config: {
+          uses: 1,
+          expireTime,
+          newSessionExpireTime,
+          liveConnectConstraints: {
+            model,
+            config: {
+              responseModalities: [Modality.AUDIO],
+              systemInstruction: {
+                parts: [{ text: buildCropDoctorSystemInstruction(cropName, candidates, farmerContext) }],
+              },
+              tools: [{ functionDeclarations: [CROP_DOCTOR_TOOL_DECLARATION] }],
+              inputAudioTranscription: {},
+              outputAudioTranscription: {},
+              mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
+              contextWindowCompression: { slidingWindow: {} },
+              sessionResumption: { handle: resumptionHandle, transparent: true },
             },
-            tools: [{ functionDeclarations: [CROP_DOCTOR_TOOL_DECLARATION] }],
-            inputAudioTranscription: {},
-            outputAudioTranscription: {},
           },
         },
-      },
-    });
+      });
 
-    const tokenName = (token as { name?: string }).name;
-    if (!tokenName) throw new Error("Gemini did not return a token name.");
+      const tokenName = (token as { name?: string }).name;
+      if (!tokenName) throw new Error("Gemini did not return a token name.");
 
-    return {
-      token: tokenName,
-      expireTime: (token as { expireTime?: string }).expireTime ?? expireTime,
-      model,
-    };
-  } catch (err) {
-    if (err instanceof LiveTokenError) throw err;
-    throw new LiveTokenError(502, err instanceof Error ? err.message : "Could not mint a live session token.");
+      return {
+        token: tokenName,
+        expireTime: (token as { expireTime?: string }).expireTime ?? expireTime,
+        model,
+      };
+    } catch (err) {
+      lastError = err;
+      if (looksLikeModelNotFound(err)) continue; // Dead/rotated model id — try the next one.
+      break; // Any other failure (auth, quota, malformed request) is real; stop immediately.
+    }
   }
+
+  throw new LiveTokenError(502, lastError instanceof Error ? lastError.message : "Could not mint a live session token.");
 }

@@ -148,6 +148,19 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   padding: 0 20px;
 }
 
+/* Audio Mode's `.voice-shell` is a deliberately full-bleed, edge-to-edge dark surface (it applies
+   its own safe-area-aware padding internally) — nesting it inside `.app-container`'s 20px/16px
+   side padding left a visible strip of the light theme's white `--background` down both edges of
+   an otherwise all-dark mobile screen. Zeroing the parent's padding for this one stage is what
+   actually removes it; nothing about `.voice-shell` itself was wrong. */
+/* !important: the `@media (max-width: 640px) { .app-container { padding: 0 16px } }` rule further
+   down this file has equal selector specificity and comes later in source order, so it would
+   otherwise win at exactly the mobile widths this fix targets and silently reintroduce the white
+   side strips there. */
+.app-container-immersive {
+  padding: 0 !important;
+}
+
 /* Header */
 .app-header {
   padding: 24px 0;
@@ -167,6 +180,29 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   font-family: var(--font-sans);
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+/* Audio Mode's dark-header variant — `.app-container-immersive` zeroes the parent's side
+   padding, so this restores an inset (safe-area-aware, matching `.voice-shell`'s own) and swaps
+   the light theme's white bar + dark text for the SAME near-black tone `.voice-shell` uses, so
+   there is no visible seam between the header and the voice screen beneath it. */
+.app-header-dark {
+  background: #0a0a0c;
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  padding-top: max(16px, env(safe-area-inset-top));
+  border-bottom: 1px solid rgba(242, 242, 243, 0.08);
+}
+.app-header-dark h1 {
+  color: #F2F2F3;
+}
+
+.btn-secondary-dark {
+  background: rgba(242, 242, 243, 0.08) !important;
+  color: #F2F2F3 !important;
+}
+.btn-secondary-dark:hover {
+  background: rgba(242, 242, 243, 0.16) !important;
 }
 
 /* Stepper */
@@ -734,7 +770,9 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
   border-radius: 50%;
   border: none;
   color: #fff;
-  background: linear-gradient(135deg, #7C4DFF, #5B3DE0);
+  /* Google Blue -> Google Green — the same idle waveform/mic pairing below, so the button a
+     farmer just tapped visually matches the state it triggers. */
+  background: linear-gradient(135deg, #4285F4, #34A853);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -787,7 +825,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 
 .voice-msg-farmer {
   align-self: flex-end;
-  background: linear-gradient(135deg, #7C4DFF, #5B3DE0);
+  background: linear-gradient(135deg, #4285F4, #34A853);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
@@ -900,7 +938,7 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 .voice-waveform-wrap.recording { --orb-1: #EA4335; --orb-2: #FBBC05; }
 .voice-waveform-wrap.recording .voice-waveform-bar { animation-duration: 0.7s; }
 
-.voice-waveform-wrap.thinking { --orb-1: #4285F4; --orb-2: #7C4DFF; }
+.voice-waveform-wrap.thinking { --orb-1: #4285F4; --orb-2: #FBBC05; }
 .voice-waveform-wrap.thinking .voice-waveform-bar { animation-duration: 1.1s; }
 
 .voice-waveform-wrap.speaking { --orb-1: #34A853; --orb-2: #4285F4; }
@@ -953,8 +991,8 @@ h3 { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 600; letter-
 }
 .voice-mic-standalone.thinking {
   --orb-1: #4285F4;
-  --orb-2: #7C4DFF;
-  box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.3), 0 0 24px 4px rgba(124, 77, 255, 0.25);
+  --orb-2: #FBBC05;
+  box-shadow: 0 0 0 4px rgba(251, 188, 5, 0.3), 0 0 24px 4px rgba(251, 188, 5, 0.25);
   animation: none;
 }
 .voice-mic-standalone.speaking {

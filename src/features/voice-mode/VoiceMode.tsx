@@ -73,8 +73,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
       <input
         ref={labReportInputRef}
         type="file"
-        accept="image/*"
-        capture="environment"
+        accept="image/*,application/pdf"
         style={{ display: 'none' }}
         onChange={handleLabReportChange}
       />
@@ -83,8 +82,8 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
         className="voice-lab-report-btn"
         disabled={labReportStatus === 'uploading'}
         onClick={() => labReportInputRef.current?.click()}
-        title="Add a photo of your soil test / lab report"
-        aria-label="Add a photo of your soil test / lab report"
+        title="Add a photo or PDF of your soil test / lab report"
+        aria-label="Add a photo or PDF of your soil test / lab report"
       >
         {labReportStatus === 'uploading' ? <Loader2 size={14} className="spin" /> : <FileText size={14} />}
         <span>Lab report</span>
@@ -152,6 +151,8 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onSwitchToVideo }) => {
           onClick={handleMicClick}
           disabled={busy || voiceReady === false}
           className={`voice-mic-standalone${stateClass}`}
+          aria-label={phase === 'recording' ? 'Stop recording' : 'Start voice question'}
+          title={phase === 'recording' ? 'Stop recording' : 'Tap to ask Krishi Mitra by voice'}
         >
           {busy ? <Loader2 size={22} className="spin" /> : phase === 'recording' ? <Square size={18} /> : <Mic size={22} />}
         </button>
