@@ -57,6 +57,20 @@ Every agent is discoverable at runtime through an in-process **A2A-style orchest
 call-log, instead of each screen reaching into a different agent directly. Full agent-by-agent
 detail lives in [`catalog.md`](catalog.md).
 
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Zustand, Vitest |
+| Backend | Node.js, Express, TypeScript |
+| AI | Gemini (`@google/genai`), Antigravity ADK transport, server-side proxy transport |
+| Voice | Sarvam AI (speech-to-text + text-to-speech, Tamil/English) |
+| Long-term memory | mem0 |
+| Structured storage | Google Cloud Firestore |
+| File/object storage | Google Cloud Storage |
+| Weather | Google Maps Platform Weather API |
+| Hosting | Google Cloud Run (single container, Cloud Build) |
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
