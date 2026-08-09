@@ -59,7 +59,7 @@ describe("Antigravity ADK (Agent Development Kit) Framework", () => {
         profile: demoProfile,
       });
 
-      expect(payload.system).toContain("Krishi Mitra");
+      expect(payload.system).toContain("Thulir");
       expect(payload.user).toContain(crop.name);
       expect(payload.user).toContain("Soil pH: 25.0 of 25");
     });

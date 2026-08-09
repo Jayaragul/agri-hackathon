@@ -68,7 +68,7 @@ function main(): void {
   });
 
   app.listen(PORT, () => {
-    console.log(`Krishi Mitra server listening on port ${PORT}`);
+    console.log(`Thulir server listening on port ${PORT}`);
   });
 }
 

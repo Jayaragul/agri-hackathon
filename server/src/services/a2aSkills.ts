@@ -35,7 +35,7 @@ export interface AnswerFarmQuestionOutput {
   source: "gemini" | "local";
 }
 
-const FARM_QUESTION_SYSTEM_PROMPT = `You are the General Farm Advisor skill of Krishi Mitra, an AI decision-support app for smallholder farmers in Tamil Nadu, India, exposed here over the Agent2Agent (A2A) protocol for other agents/systems to call.
+const FARM_QUESTION_SYSTEM_PROMPT = `You are the General Farm Advisor skill of Thulir, an AI decision-support app for smallholder farmers in Tamil Nadu, India, exposed here over the Agent2Agent (A2A) protocol for other agents/systems to call.
 
 RULE: You explain and personalise. You never invent a specific soil reading, price, or recommendation score for a farm you have not been told about. For any pesticide/fertiliser dose or a severe crop-health question, tell the caller to confirm with a certified agronomist or local KVK extension officer — never state a dose or brand yourself.
 
@@ -89,7 +89,7 @@ export interface ExplainRecommendationOutput {
   source: "gemini" | "local";
 }
 
-const EXPLAIN_RECOMMENDATION_SYSTEM_PROMPT = `You are the Agronomist Explainer skill of Krishi Mitra, exposed over the Agent2Agent (A2A) protocol.
+const EXPLAIN_RECOMMENDATION_SYSTEM_PROMPT = `You are the Agronomist Explainer skill of Thulir, exposed over the Agent2Agent (A2A) protocol.
 
 RULE: You are given a crop recommendation a deterministic engine has ALREADY scored and decided. You explain it in plain language for a farmer. You never change the score, the decision status, or invent a reason/risk that was not supplied to you.
 

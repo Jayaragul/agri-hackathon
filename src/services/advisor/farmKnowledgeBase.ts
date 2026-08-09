@@ -21,21 +21,44 @@ export interface KnowledgeEntry {
 
 const knowledgeBase = wikiKnowledgeRaw as KnowledgeEntry[];
 
-function normalize(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ");
+// Words too generic to signal topical relevance on their own — left unfiltered, "crop", "soil",
+// and "what" would spuriously match nearly every entry (e.g. a question about crop SELECTION
+// scoring against an entry that merely mentions "soil fungus" or "protect crops" in passing),
+// producing a confident-looking but topically unrelated answer instead of an honest "no match".
+const STOPWORDS = new Set([
+  "what", "why", "how", "when", "where", "which", "who", "does", "did", "should", "would",
+  "could", "can", "will", "the", "and", "for", "are", "was", "were", "with", "from", "this",
+  "that", "have", "has", "had", "you", "your", "about", "into", "out", "grow", "growing",
+  "best", "good", "need", "needs", "want", "give", "tell", "get", "use", "using",
+  "crop", "crops", "soil", "farm", "farming", "plant", "plants",
+]);
+
+function tokenize(value: string): Set<string> {
+  return new Set(
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 2)
+  );
 }
 
-/** Rank knowledge-base entries by keyword overlap with `question`; ties broken by original order. */
+/**
+ * Rank knowledge-base entries by exact-word keyword overlap with `question`; ties broken by
+ * original order. Exact whole-word matching (not substring) is deliberate: a naive `.includes()`
+ * check let a query word like "crop" match an unrelated entry's "crops" or "soil" match "soil
+ * fungus", pulling in topically wrong entries whenever the query happened to share one common
+ * word with them. Stopwords are excluded from scoring so a generic word shared with many entries
+ * can't outweigh (or fake) a real topical match on its own.
+ */
 export function findKnowledgeEntries(question: string, limit = 2): KnowledgeEntry[] {
-  const words = normalize(question)
-    .split(/\s+/)
-    .filter((word) => word.length > 2);
+  const words = [...tokenize(question)].filter((word) => !STOPWORDS.has(word));
   if (words.length === 0) return [];
 
   return knowledgeBase
     .map((entry) => {
-      const haystack = normalize(`${entry.question} ${entry.keywords.join(" ")}`);
-      const score = words.reduce((total, word) => total + (haystack.includes(word) ? 1 : 0), 0);
+      const haystack = tokenize(`${entry.question} ${entry.keywords.join(" ")}`);
+      const score = words.reduce((total, word) => total + (haystack.has(word) ? 1 : 0), 0);
       return { entry, score };
     })
     .filter((item) => item.score > 0)

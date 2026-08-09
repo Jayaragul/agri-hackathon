@@ -1,9 +1,9 @@
 {
-  "name": "krishi-mitra-server",
+  "name": "thulir-server",
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
-  "description": "Express backend for Krishi Mitra. Persists session snapshots and calendar chat threads to Google Cloud Storage when configured, falling back to an in-memory store otherwise. See ../catalog.md and deploy/DEPLOY.md.",
+  "description": "Express backend for Thulir. Persists session snapshots and calendar chat threads to Google Cloud Storage when configured, falling back to an in-memory store otherwise. See ../catalog.md and deploy/DEPLOY.md.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

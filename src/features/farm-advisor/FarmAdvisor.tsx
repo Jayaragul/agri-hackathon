@@ -133,7 +133,7 @@ const FarmAdvisor: React.FC = () => {
         Ask <span className="gradient-text gradient-underline">anything</span>
       </h2>
       <p style={{ marginBottom: '24px', color: 'var(--muted-foreground)', fontSize: '16px' }}>
-        Grounded in Krishi Mitra's verified knowledge base, personalized to your farm when you've entered one.
+        Grounded in Thulir's verified knowledge base, personalized to your farm when you've entered one.
       </p>
 
       {messages.length === 0 && !loadingHistory && (
@@ -207,7 +207,7 @@ const FarmAdvisor: React.FC = () => {
       <div className="alert alert-info">
         <Sparkles size={20} style={{ flexShrink: 0, color: 'var(--accent)' }} />
         <div className="alert-desc">
-          This advisor explains and personalizes — it never changes a crop score, a cost, or a safety threshold. Those always come from Krishi Mitra's deterministic engine.
+          This advisor explains and personalizes — it never changes a crop score, a cost, or a safety threshold. Those always come from Thulir's deterministic engine.
         </div>
       </div>
     </div>

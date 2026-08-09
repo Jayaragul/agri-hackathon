@@ -274,7 +274,7 @@ const CropCalendar: React.FC = () => {
             </strong>
             {timelineEvents.length === 0 ? (
               <p style={{ fontSize: '14px', color: 'var(--muted-foreground)', margin: 0 }}>
-                Nothing logged yet — talk to Krishi Mitra in Audio Mode, or add a note below.
+                Nothing logged yet — talk to Thulir in Audio Mode, or add a note below.
               </p>
             ) : (
               <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
