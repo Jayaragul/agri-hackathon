@@ -36,6 +36,27 @@ budget Android phone: audio-first, plain language, and honest about what it does
 - 🧠 **Long-term memory** — remembers durable facts about a farmer across conversations, via
   mem0, without ever replaying full chat history.
 
+## Architecture & the AI boundary
+
+> **The deterministic engine (`src/engine/**`) DECIDES. Every AI agent only EXPLAINS or
+> PERCEIVES.**
+
+No agent output may ever change a suitability score, a crop ranking, a financial figure, a
+safety threshold, or a chemical/pesticide dose. Concretely:
+
+- Live market prices fetched via Gemini search grounding are **informational only** and never
+  re-enter the financial math.
+- Chemical/pesticide/fertilizer dosing comes **only** from the verified dataset, never the model.
+- Pest photo identification is **constrained classification** against a crop's known pest list,
+  not open-ended diagnosis.
+- A soil-report extraction returns `null` rather than guess, and every extracted value stays
+  farmer-editable.
+
+Every agent is discoverable at runtime through an in-process **A2A-style orchestrator**
+(`src/services/ai/a2a/`), modelled on Google's Agent2Agent protocol shape — one registry, one
+call-log, instead of each screen reaching into a different agent directly. Full agent-by-agent
+detail lives in [`catalog.md`](catalog.md).
+
 ## The solution
 
 A pre-sowing wizard scores every viable crop against the farmer's actual soil and land, a
