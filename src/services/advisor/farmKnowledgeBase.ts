@@ -96,10 +96,25 @@ export function buildLocalFarmAnswer(
   question: string,
   profile?: FarmProfile | null,
   crop?: Crop | null,
-  topRecommendation?: RecommendationResult | null
+  topRecommendation?: RecommendationResult | null,
+  spokenStyle = false
 ): FarmAdvisorAnswer {
   const matches = findKnowledgeEntries(question, 2);
   const context = summariseFarmContext(profile, crop, topRecommendation);
+
+  if (spokenStyle) {
+    const tamilContext = profile
+      ? `உங்கள் பண்ணை ${profile.region} பகுதியில் உள்ளது. பரப்பளவு ${profile.acres} ஏக்கர். மண் வகை ${profile.soilType}. மண் pH ${profile.ph}. கிடைக்கும் சத்துகள்: நைட்ரஜன் ${profile.nitrogenKgPerAcre}, பாஸ்பரஸ் ${profile.phosphorusKgPerAcre}, பொட்டாசியம் ${profile.potassiumKgPerAcre} கிலோ ஏக்கருக்கு.`
+      : "பண்ணை விவரங்கள் இன்னும் பதிவு செய்யப்படவில்லை.";
+    const recommendation = topRecommendation
+      ? `சிறந்த பயிர் பரிந்துரை ${topRecommendation.crop.name}. மதிப்பெண் ${Math.round(topRecommendation.score)}. நம்பகத்தன்மை ${topRecommendation.confidence}.`
+      : "பயிர் பரிந்துரைக்கு மண் மற்றும் பண்ணை விவரங்களை முதலில் பதிவு செய்யுங்கள்.";
+    return {
+      confidence: matches.length > 0 ? "medium" : "low",
+      topics: matches.length > 0 ? matches.map((match) => match.question) : ["Farm context"],
+      answer: `சரிபார்க்கப்பட்ட உள்ளூர் தரவுத்தளத்தில் இருந்து கிடைத்த தகவலின் அடிப்படையில் வழிகாட்டுகிறேன். ${tamilContext} ${recommendation} மண் pH மற்றும் NPK அளவுகளுக்கு ஏற்ப முடிவு எடுங்கள். பூச்சிக்கொல்லி அளவு அல்லது கடுமையான பிரச்சினைக்கு அருகிலுள்ள KVK வேளாண் அதிகாரியை அணுகுங்கள்.`,
+    };
+  }
 
   if (matches.length === 0) {
     return {
