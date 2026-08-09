@@ -1,6 +1,6 @@
 import React from 'react'
 import type { FarmReportData } from '../../domain/models/reportModels'
-import { parseIsoDate } from '../../engine/cropCalendarEngine'
+import { parseIsoDate, PHASE_LABELS, type CalendarDay, type CropCalendarPhase } from '../../engine/cropCalendarEngine'
 import GroupedBarChart from './charts/GroupedBarChart'
 import DonutChart from './charts/DonutChart'
 import SimpleBarChart from './charts/SimpleBarChart'
@@ -76,10 +76,55 @@ const DECISION_LABEL: Record<string, string> = {
   'not-currently-feasible': 'Not currently feasible',
 }
 
+/** Plain-language, one-line explanation of each cultivation phase — the "Your Complete Roadmap" section's whole point is that a farmer can read this page alone and understand the crop's full journey without touching any other page. */
+const PHASE_ICON: Record<CropCalendarPhase, string> = {
+  'soil-prep': '🚜',
+  germination: '🌱',
+  vegetative: '🌿',
+  flowering: '🌸',
+  maturation: '🌾',
+  'harvest-window': '🧺',
+}
+const PHASE_BLURB: Record<CropCalendarPhase, string> = {
+  'soil-prep': 'Fix any soil gaps (see Section 4) so the crop starts strong — this happens BEFORE the seed goes in.',
+  germination: 'The seed sprouts. Keep the soil moist and check daily for early pest damage.',
+  vegetative: 'The main growth phase — leaves, stems, and roots build up. Follow the weekly goals in Section 8.',
+  flowering: 'Flowers form. The most sensitive stage — watering and pest control matter most right now.',
+  maturation: 'The crop ripens. Start reducing water and begin planning labor/transport for harvest day.',
+  'harvest-window': 'Harvest and prepare the crop for sale — see Section 10 for how to sell it well.',
+}
+
+/** Groups consecutive same-phase days into date-range segments — same grouping shape `PhaseTimeline.tsx` uses internally, kept here too since the roadmap step-list and the Gantt chart serve different reading needs (overview-first vs. visual reference) from the same underlying data. */
+function groupPhaseSegments(days: CalendarDay[]): Array<{ phase: CropCalendarPhase; startDateIso: string; endDateIso: string; dayCount: number }> {
+  const sorted = [...days].sort((a, b) => a.dayIndex - b.dayIndex)
+  const segments: Array<{ phase: CropCalendarPhase; startDateIso: string; endDateIso: string; dayCount: number }> = []
+  for (const day of sorted) {
+    const last = segments[segments.length - 1]
+    if (last && last.phase === day.phase) {
+      last.endDateIso = day.dateIso
+      last.dayCount += 1
+    } else {
+      segments.push({ phase: day.phase, startDateIso: day.dateIso, endDateIso: day.dateIso, dayCount: 1 })
+    }
+  }
+  return segments
+}
+
+/** Slim 4-color brand strip at the top of every content section — same Google-palette lockup used elsewhere in the app (e.g. the onboarding screen), repeated here so every page of a multi-page printed/exported document still reads as one cohesive Thulir document. */
+const BrandStripe: React.FC = () => (
+  <div style={{ display: 'flex', height: 4, marginBottom: 24 }}>
+    <div style={{ flex: 1, background: BLUE }} />
+    <div style={{ flex: 1, background: RED }} />
+    <div style={{ flex: 1, background: YELLOW }} />
+    <div style={{ flex: 1, background: GREEN }} />
+  </div>
+)
+
 const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
   const { profile, crop, recommendation, allRecommendations, gapAnalysis, financials, pestRisks, calendarPlan, weeklyPlan, marketDemand, farmerName } = data
 
   const cost = financials.expected.costBreakdown
+  const phaseSegments = groupPhaseSegments(calendarPlan.days)
 
   return (
     <div style={{ width: PAGE_WIDTH }}>
@@ -111,9 +156,49 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
         </div>
       </section>
 
+      {/* --- Roadmap Overview --- */}
+      <section className="report-section" style={sectionStyle}>
+        <BrandStripe />
+        <h2 style={h2Style}>1 · Your Complete {crop.name} Roadmap</h2>
+        <p style={{ fontSize: 14, color: MUTED, margin: '0 0 24px', lineHeight: 1.6 }}>
+          Every step of growing {crop.name} on your {profile.acres}-acre farm — from soil preparation before the seed
+          goes in, all the way to selling the harvest. Each step below is explained in the later sections of this
+          report.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {phaseSegments.map((seg, i) => (
+            <div key={`${seg.phase}-${seg.startDateIso}`} style={{ ...cardStyle, display: 'flex', gap: 16, alignItems: 'flex-start', breakInside: 'avoid' }}>
+              <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{PHASE_ICON[seg.phase]}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <strong style={{ fontSize: 14 }}>
+                    Step {i + 1} · {PHASE_LABELS[seg.phase]}
+                  </strong>
+                  <span style={{ fontSize: 12, color: MUTED, fontFamily: 'monospace' }}>
+                    {formatDate(seg.startDateIso)} – {formatDate(seg.endDateIso)} ({seg.dayCount} day{seg.dayCount === 1 ? '' : 's'})
+                  </span>
+                </div>
+                <p style={{ fontSize: 13, margin: '6px 0 0', color: INK, lineHeight: 1.5 }}>{PHASE_BLURB[seg.phase]}</p>
+              </div>
+            </div>
+          ))}
+          <div style={{ ...cardStyle, display: 'flex', gap: 16, alignItems: 'flex-start', background: '#F0FBF4', borderColor: '#BFE8CC', breakInside: 'avoid' }}>
+            <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>🛒</div>
+            <div style={{ flex: 1 }}>
+              <strong style={{ fontSize: 14 }}>Step {phaseSegments.length + 1} · Selling at Market</strong>
+              <p style={{ fontSize: 13, margin: '6px 0 0', color: INK, lineHeight: 1.5 }}>
+                After harvest, sell through your local mandi or Thulir's marketplace network. See Section 10 for
+                expected price, likely wastage, and what your harvest is worth.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* --- Soil Health --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>1 · Soil Health Snapshot</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>2 · Soil Health Snapshot</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
           {[
             { label: 'Soil pH', value: profile.ph.toFixed(1), sub: `Ideal ${crop.idealPhMin}–${crop.idealPhMax}` },
@@ -140,7 +225,8 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
 
       {/* --- Crop Recommendation --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>2 · Crop Recommendation</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>3 · Crop Recommendation</h2>
         <SimpleBarChart
           title="Suitability score by crop (out of 100)"
           maxValue={100}
@@ -172,7 +258,8 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
 
       {/* --- Soil Correction Plan --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>3 · Soil Correction Plan</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>4 · Soil Correction Plan</h2>
         {gapAnalysis.gaps.length === 0 ? (
           <p style={{ fontSize: 14, color: MUTED }}>Soil conditions are already suitable — no pre-farming corrections required.</p>
         ) : (
@@ -206,7 +293,8 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
 
       {/* --- Financial Forecast --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>4 · Financial Forecast</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>5 · Financial Forecast</h2>
         <GroupedBarChart
           title="Net profit by scenario (₹)"
           formatValue={(v) => `₹${Math.round(v / 1000)}k`}
@@ -249,7 +337,8 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
 
       {/* --- Pest Risk --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>5 · Pest Risk Forecast</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>6 · Pest Risk Forecast</h2>
         {pestRisks.length === 0 ? (
           <p style={{ fontSize: 14, color: MUTED }}>No major pest warnings dataset for this crop. Maintain good field sanitation.</p>
         ) : (
@@ -282,13 +371,15 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
 
       {/* --- Cultivation Timeline --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>6 · Cultivation Timeline</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>7 · Cultivation Timeline</h2>
         <PhaseTimeline title={`${crop.name} growth phases — ${formatDate(calendarPlan.sowingDateIso)} to ${formatDate(calendarPlan.harvestDateIso)}`} days={calendarPlan.days} />
       </section>
 
       {/* --- Weekly Plan & Goals --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>7 · Weekly Plan &amp; Goals</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>8 · Weekly Plan &amp; Goals</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {weeklyPlan.map((w) => (
             <div key={w.weekIndex} style={{ ...cardStyle, breakInside: 'avoid' }}>
@@ -315,7 +406,8 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
 
       {/* --- Full Daily Plan --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>8 · Full Daily Plan</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>9 · Full Daily Plan</h2>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
           <thead>
             <tr style={{ textAlign: 'left', borderBottom: `2px solid ${BORDER}` }}>
@@ -338,11 +430,50 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
         </table>
       </section>
 
-      {/* --- Market Insight --- */}
+      {/* --- Selling at Market --- */}
       <section className="report-section" style={sectionStyle}>
-        <h2 style={h2Style}>9 · Market Insight</h2>
+        <BrandStripe />
+        <h2 style={h2Style}>10 · Selling at Market</h2>
+        <p style={{ fontSize: 13, color: MUTED, margin: '0 0 20px', lineHeight: 1.6 }}>
+          What to expect when {crop.name} is ready to sell, based on the dataset's regional average price and this
+          farm's expected yield after wastage.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+          <div style={cardStyle}>
+            <span style={labelStyle}>Expected saleable yield</span>
+            <strong style={{ fontSize: 16 }}>{Math.round(financials.expected.saleableYieldKg).toLocaleString('en-IN')} kg</strong>
+            <span style={{ fontSize: 11, color: MUTED }}>after {crop.wastagePercent}% wastage</span>
+          </div>
+          <div style={cardStyle}>
+            <span style={labelStyle}>Expected price</span>
+            <strong style={{ fontSize: 16 }}>₹{financials.expected.effectivePricePerKg.toFixed(1)}/kg</strong>
+            <span style={{ fontSize: 11, color: MUTED }}>dataset average ₹{crop.marketPricePerKg}/kg</span>
+          </div>
+          <div style={cardStyle}>
+            <span style={labelStyle}>Expected gross revenue</span>
+            <strong style={{ fontSize: 16 }}>{formatCurrency(financials.expected.grossRevenue)}</strong>
+            <span style={{ fontSize: 11, color: MUTED }}>before mandi charges</span>
+          </div>
+          <div style={cardStyle}>
+            <span style={labelStyle}>Mandi charges (est.)</span>
+            <strong style={{ fontSize: 16 }}>{formatCurrency(cost.mandiCharges)}</strong>
+            <span style={{ fontSize: 11, color: MUTED }}>already counted in Section 5</span>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <span style={labelStyle}>Practical tips for a better price</span>
+          <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13, lineHeight: 1.8 }}>
+            <li>Sell within a few days of harvest — {crop.name}'s dataset wastage rate ({crop.wastagePercent}%) climbs the longer it sits.</li>
+            <li>Check 2–3 nearby mandis before committing — prices can vary more than the transport cost to reach a better one.</li>
+            <li>Sort and grade the produce before sale; uniform lots typically fetch closer to the top of the price range.</li>
+            <li>If a Thulir marketplace listing is available below, compare it against your local mandi quote before deciding.</li>
+          </ul>
+        </div>
+
+        <span style={labelStyle}>Live Thulir marketplace signal</span>
         {marketDemand && marketDemand.demandTier !== 'no-data' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 8 }}>
             <div style={cardStyle}>
               <span style={labelStyle}>Demand (last {marketDemand.windowDays} days)</span>
               <strong style={{ fontSize: 18, textTransform: 'capitalize' }}>{marketDemand.demandTier}</strong>
@@ -360,8 +491,10 @@ const ReportDocument: React.FC<{ data: FarmReportData }> = ({ data }) => {
             </div>
           </div>
         ) : (
-          <p style={{ fontSize: 14, color: MUTED }}>
-            No live FarmConnect marketplace demand recorded for {crop.name} yet. Check back closer to harvest — this section updates automatically once buyers post requests.
+          <p style={{ fontSize: 13, color: MUTED, margin: '8px 0 0' }}>
+            No live FarmConnect marketplace demand recorded for {crop.name} yet — the figures above (dataset price and
+            expected yield) are still a reliable planning baseline. This section updates automatically once buyers
+            post requests through Thulir's marketplace network.
           </p>
         )}
       </section>
