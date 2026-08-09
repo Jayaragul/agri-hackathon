@@ -108,7 +108,7 @@ function App() {
           <h1 style={{ fontSize: '24px' }}>Thulir</h1>
           <span>Smart farming, rooted locally</span>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+        <div className="header-actions" style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
           {isSpecialMode ? (
             <button
               type="button"

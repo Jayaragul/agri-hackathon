@@ -41,7 +41,7 @@ FROM node:20-slim AS server-build
 WORKDIR /app/server
 
 COPY server/package.json server/package-lock.json server/.npmrc ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 COPY server/src ./src
 COPY server/tsconfig.json ./
@@ -58,7 +58,7 @@ ENV PORT=8080
 
 # Production-only server dependencies.
 COPY server/package.json server/package-lock.json server/.npmrc ./server/
-RUN cd server && npm ci --omit=dev
+RUN cd server && npm ci --omit=dev --legacy-peer-deps
 
 # Compiled server code.
 COPY --from=server-build /app/server/dist ./server/dist
